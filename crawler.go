@@ -13,36 +13,61 @@ import (
 )
 
 var target = "https://monzo.com/"
-var wg sync.WaitGroup
+
 var mu sync.RWMutex
 
 func main() {
-	entryUrl, err := url.Parse(target)
+	crawler, err := NewCrawler(target)
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	siteMap := make(map[string]string)
+	crawler.StartCrawling()
 
-	siteMap[target] = ""
-
-	started := time.Now()
-	wg.Add(1)
-	go CrawlUrl(*entryUrl, siteMap)
-
-	wg.Wait()
-
-	timeSpent := time.Since(started)
-
-	logrus.Info(len(siteMap))
-	logrus.Info(timeSpent)
-
+	//spew.Dump(crawler.SiteMap)
+	logrus.Info(len(crawler.SiteMap))
+	logrus.Info(crawler.TotalDelay)
 }
 
-func CrawlUrl(url url.URL, siteMap map[string]string) error {
-	defer wg.Done()
+type Crawler struct {
+	TargetUrl  *url.URL
+	SiteMap    map[string][]string
+	TotalDelay time.Duration
+	wg         sync.WaitGroup
+}
 
-	resp, err := http.Get(url.String())
+//NewCrawler creates new Crawler structure instance
+func NewCrawler(targetUrl string) (*Crawler, error) {
+	crawler := &Crawler{
+		SiteMap: make(map[string][]string),
+	}
+	crawler.SiteMap[targetUrl] = []string{}
+
+	formatUrl, err := url.Parse(target)
+	if err != nil {
+		return nil, err
+	}
+	crawler.TargetUrl = formatUrl
+
+	return crawler, nil
+}
+
+//StartCrawling starting crawling
+func (c *Crawler) StartCrawling() {
+	started := time.Now()
+
+	c.wg.Add(1)
+	go c.CrawlUrl(*c.TargetUrl)
+	c.wg.Wait()
+
+	c.TotalDelay = time.Since(started)
+}
+
+func (c *Crawler) CrawlUrl(parentUrl url.URL) error {
+	defer c.wg.Done()
+	logrus.Infof("Start crawl %s\n", parentUrl.String())
+
+	resp, err := http.Get(parentUrl.String())
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -60,27 +85,29 @@ func CrawlUrl(url url.URL, siteMap map[string]string) error {
 			token := tokens.Token()
 			if "a" == token.Data {
 				for _, attr := range token.Attr {
-					if link := attr.Val; isLinkValid(link, target) && attr.Key == "href" {
-						childUrl, err := url.Parse(link)
+					if link := removeAnchor(attr.Val); isLinkValid(link, c.TargetUrl.String()) && attr.Key == "href" {
+						childUrl, err := parentUrl.Parse(link)
 						if err != nil {
 							return err
 						}
 
 						mu.Lock()
-						_, ok := siteMap[childUrl.String()]
+						c.SiteMap[parentUrl.String()] = append(c.SiteMap[parentUrl.String()], childUrl.String())
+						mu.Unlock()
+
+						mu.Lock()
+						_, ok := c.SiteMap[childUrl.String()]
 						mu.Unlock()
 						if ok {
 							continue
 						}
 
 						mu.Lock()
-						siteMap[childUrl.String()] = ""
+						c.SiteMap[childUrl.String()] = []string{}
 						mu.Unlock()
 
-						//spew.Dump(childUrl.String())
-						wg.Add(1)
-						//fmt.Println(siteMap)
-						go CrawlUrl(*childUrl, siteMap)
+						c.wg.Add(1)
+						go c.CrawlUrl(*childUrl)
 					}
 				}
 			}
@@ -88,9 +115,17 @@ func CrawlUrl(url url.URL, siteMap map[string]string) error {
 	}
 }
 
+//isLinkValid check if given link is valid for parsing
 func isLinkValid(link, host string) bool {
-	if (strings.HasPrefix(link, "/") || strings.Contains(link, host)) && !strings.Contains(link, "email-protection") && !strings.Contains(link, "/#") {
+	if (strings.HasPrefix(link, "/") || strings.Contains(link, host)) && !strings.Contains(link, "email-protection") {
 		return true
 	}
 	return false
+}
+
+func removeAnchor(s string) string {
+	if idx := strings.Index(s, "/#"); idx != -1 {
+		return s[:idx]
+	}
+	return s
 }
