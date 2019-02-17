@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/davecgh/go-spew/spew"
 	"net/http"
 	"net/url"
 	"strings"
@@ -24,24 +25,36 @@ func main() {
 
 	crawler.StartCrawling()
 
-	//spew.Dump(crawler.SiteMap)
-	logrus.Info(len(crawler.SiteMap))
+	//spew.Dump(crawler.HashMap)
+	spew.Dump(crawler.Site)
+	logrus.Info(crawler.Site.TotalPages)
 	logrus.Info(crawler.TotalDelay)
 }
 
 type Crawler struct {
 	TargetUrl  *url.URL
-	SiteMap    map[string][]string
+	Site       *Site
+	HashMap    map[string][]string
 	TotalDelay time.Duration
 	wg         sync.WaitGroup
+}
+
+type Site struct {
+	EntryPage  *Page
+	TotalPages int
+}
+
+type Page struct {
+	Url   *url.URL
+	Links []*Page
 }
 
 //NewCrawler creates new Crawler structure instance
 func NewCrawler(targetUrl string) (*Crawler, error) {
 	crawler := &Crawler{
-		SiteMap: make(map[string][]string),
+		HashMap: make(map[string][]string),
 	}
-	crawler.SiteMap[targetUrl] = []string{}
+	crawler.HashMap[targetUrl] = []string{}
 
 	formatUrl, err := url.Parse(target)
 	if err != nil {
@@ -49,6 +62,11 @@ func NewCrawler(targetUrl string) (*Crawler, error) {
 	}
 	crawler.TargetUrl = formatUrl
 
+	crawler.Site = &Site{
+		EntryPage: &Page{
+			Url: formatUrl,
+		},
+	}
 	return crawler, nil
 }
 
@@ -57,17 +75,18 @@ func (c *Crawler) StartCrawling() {
 	started := time.Now()
 
 	c.wg.Add(1)
-	go c.CrawlUrl(*c.TargetUrl)
+	go c.CrawlPage(c.Site.EntryPage)
 	c.wg.Wait()
 
 	c.TotalDelay = time.Since(started)
+	c.Site.TotalPages = len(c.HashMap)
 }
 
-func (c *Crawler) CrawlUrl(parentUrl url.URL) error {
+func (c *Crawler) CrawlPage(page *Page) error {
 	defer c.wg.Done()
-	logrus.Infof("Start crawl %s\n", parentUrl.String())
+	logrus.Infof("Start crawl %s", page.Url.String())
 
-	resp, err := http.Get(parentUrl.String())
+	resp, err := http.Get(page.Url.String())
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -76,38 +95,41 @@ func (c *Crawler) CrawlUrl(parentUrl url.URL) error {
 	tokens := html.NewTokenizer(resp.Body)
 
 	for {
-		tokenType := tokens.Next()
-
-		switch tokenType {
+		switch tokens.Next() {
 		case html.ErrorToken:
 			return nil
 		case html.StartTagToken, html.EndTagToken:
-			token := tokens.Token()
-			if "a" == token.Data {
+			if token := tokens.Token(); token.Data == "a" {
 				for _, attr := range token.Attr {
 					if link := removeAnchor(attr.Val); isLinkValid(link, c.TargetUrl.String()) && attr.Key == "href" {
-						childUrl, err := parentUrl.Parse(link)
+						childUrl, err := page.Url.Parse(link)
 						if err != nil {
 							return err
 						}
 
 						mu.Lock()
-						c.SiteMap[parentUrl.String()] = append(c.SiteMap[parentUrl.String()], childUrl.String())
+						c.HashMap[page.Url.String()] = append(c.HashMap[page.Url.String()], childUrl.String())
 						mu.Unlock()
 
 						mu.Lock()
-						_, ok := c.SiteMap[childUrl.String()]
+						_, ok := c.HashMap[childUrl.String()]
 						mu.Unlock()
 						if ok {
 							continue
 						}
 
 						mu.Lock()
-						c.SiteMap[childUrl.String()] = []string{}
+						c.HashMap[childUrl.String()] = []string{}
 						mu.Unlock()
 
+						childPage := &Page{Url: childUrl}
+
+						page.Links = append(page.Links, childPage)
+
 						c.wg.Add(1)
-						go c.CrawlUrl(*childUrl)
+						go c.CrawlPage(childPage)
+
+						break
 					}
 				}
 			}
