@@ -5,11 +5,10 @@ import (
 	"net/url"
 	"strings"
 	"sync"
-	time2 "time"
+	"time"
 
 	"golang.org/x/net/html"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/sirupsen/logrus"
 )
 
@@ -27,13 +26,13 @@ func main() {
 
 	siteMap[target] = ""
 
-	started := time2.Now()
+	started := time.Now()
 	wg.Add(1)
 	go CrawlUrl(*entryUrl, siteMap)
 
 	wg.Wait()
 
-	timeSpent := time2.Since(started)
+	timeSpent := time.Since(started)
 
 	logrus.Info(len(siteMap))
 	logrus.Info(timeSpent)
@@ -78,7 +77,7 @@ func CrawlUrl(url url.URL, siteMap map[string]string) error {
 						siteMap[childUrl.String()] = ""
 						mu.Unlock()
 
-						spew.Dump(childUrl.String())
+						//spew.Dump(childUrl.String())
 						wg.Add(1)
 						//fmt.Println(siteMap)
 						go CrawlUrl(*childUrl, siteMap)
