@@ -89,7 +89,7 @@ func CrawlUrl(url url.URL, siteMap map[string]string) error {
 }
 
 func isLinkValid(link, host string) bool {
-	if (strings.HasPrefix(link, "/") || strings.Contains(link, host)) && !strings.Contains(link, "email-protection") {
+	if (strings.HasPrefix(link, "/") || strings.Contains(link, host)) && !strings.Contains(link, "email-protection") && !strings.Contains(link, "/#") {
 		return true
 	}
 	return false
