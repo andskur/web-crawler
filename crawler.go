@@ -7,9 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/net/html"
-
 	"github.com/sirupsen/logrus"
+	"golang.org/x/net/html"
 )
 
 // global Read/Write mutex variable
@@ -65,7 +64,7 @@ func (c *Crawler) CrawlPage(page *Page) error {
 
 	resp, err := http.Get(page.Url.String())
 	if err != nil {
-		logrus.Fatal(err)
+		return err
 	}
 	defer resp.Body.Close()
 
@@ -79,9 +78,25 @@ func (c *Crawler) CrawlPage(page *Page) error {
 			if token := tokens.Token(); token.Data == "a" {
 				for _, attr := range token.Attr {
 					if link := removeAnchor(attr.Val); isLinkValid(link, c.TargetUrl.String()) && attr.Key == "href" {
+						//link = strings.TrimSuffix(link, "/")
 						childUrl, err := page.Url.Parse(link)
 						if err != nil {
 							return err
+						}
+
+						if len(childUrl.Query()) > 0 {
+							continue
+						}
+
+						if childUrl.Host != page.Url.Host {
+							continue
+						}
+
+						mu.Lock()
+						contain := inSlice(childUrl.String(), c.HashMap[page.Url.String()])
+						mu.Unlock()
+						if contain {
+							continue
 						}
 
 						mu.Lock()
@@ -89,7 +104,8 @@ func (c *Crawler) CrawlPage(page *Page) error {
 						mu.Unlock()
 
 						mu.Lock()
-						_, ok := c.HashMap[childUrl.String()]
+						//_, ok := c.HashMap[childUrl.String()]
+						ok := inMap(childUrl.String(), c.HashMap)
 						mu.Unlock()
 						if ok {
 							continue
@@ -105,14 +121,14 @@ func (c *Crawler) CrawlPage(page *Page) error {
 
 						c.wg.Add(1)
 						go c.CrawlPage(childPage)
-
-						break
 					}
 				}
 			}
 		}
 	}
 }
+
+//TODO move validation to Page methods
 
 //isLinkValid check if given link is valid for parsing
 func isLinkValid(link, host string) bool {
@@ -128,4 +144,32 @@ func removeAnchor(s string) string {
 		return s[:idx]
 	}
 	return s
+}
+
+//inSlice checks if slice contain given string
+func inSlice(s string, slice []string) bool {
+	for _, v := range slice {
+		if s == v || v+"/" == s {
+			//if s == v {
+			return true
+		}
+	}
+	return false
+}
+
+//TODO need refactoring
+
+//inMap check if map contain given link
+func inMap(s string, m map[string][]string) bool {
+	/*if len(m[s]) > 0 || len(m[s + "/"]) > 0 || len(m[strings.TrimSuffix(s, "/")]) > 0 {
+		return true
+	}
+	return false*/
+	_, ok := m[s]
+	_, okSlash := m[s+"/"]
+	_, okOneMore := m[strings.TrimSuffix(s, "/")]
+	if okSlash || ok || okOneMore {
+		return true
+	}
+	return false
 }

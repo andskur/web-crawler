@@ -2,9 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
+
 	"github.com/andskur/web-crawler"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
 )
 
 var target = "https://monzo.com/"
