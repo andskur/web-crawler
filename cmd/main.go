@@ -17,26 +17,15 @@ func main() {
 
 	crawler.StartCrawling()
 
-	//spew.Dump(crawler.HashMap)
-	//spew.Dump(crawler.Site)
 	logrus.Info(crawler.Site.TotalPages)
 	logrus.Info(crawler.TotalDelay)
 
-	/*fileWriter, err := os.Create("sitemap.json")
-	if err != nil {
-		logrus.Fatal()
-	}
-
-	if err = json.NewEncoder(fileWriter).Encode(crawler.Site); err != nil {
-		logrus.Fatal(err)
-	}*/
-
-	jsonFormat, err := json.MarshalIndent(crawler.Site, "", " ")
+	jsonFormat, err := json.MarshalIndent(crawler.HashMap, "", " ")
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	if err := ioutil.WriteFile("teest.json", jsonFormat, 0644); err != nil {
+	if err := ioutil.WriteFile("test.json", jsonFormat, 0644); err != nil {
 		logrus.Fatal(err)
 	}
 }
