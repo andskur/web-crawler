@@ -1,7 +1,6 @@
-package main
+package crawler
 
 import (
-	"github.com/davecgh/go-spew/spew"
 	"net/http"
 	"net/url"
 	"strings"
@@ -13,40 +12,17 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var target = "https://monzo.com/"
-
+// global Read/Write mutex variable
+// for threadsafe operations with maps
 var mu sync.RWMutex
 
-func main() {
-	crawler, err := NewCrawler(target)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	crawler.StartCrawling()
-
-	//spew.Dump(crawler.HashMap)
-	spew.Dump(crawler.Site)
-	logrus.Info(crawler.Site.TotalPages)
-	logrus.Info(crawler.TotalDelay)
-}
-
+//Crawler represent web-crawler structure
 type Crawler struct {
 	TargetUrl  *url.URL
 	Site       *Site
 	HashMap    map[string][]string
 	TotalDelay time.Duration
 	wg         sync.WaitGroup
-}
-
-type Site struct {
-	EntryPage  *Page
-	TotalPages int
-}
-
-type Page struct {
-	Url   *url.URL
-	Links []*Page
 }
 
 //NewCrawler creates new Crawler structure instance
@@ -56,7 +32,7 @@ func NewCrawler(targetUrl string) (*Crawler, error) {
 	}
 	crawler.HashMap[targetUrl] = []string{}
 
-	formatUrl, err := url.Parse(target)
+	formatUrl, err := url.Parse(targetUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +58,7 @@ func (c *Crawler) StartCrawling() {
 	c.Site.TotalPages = len(c.HashMap)
 }
 
+//CrawlPage crawl given site page
 func (c *Crawler) CrawlPage(page *Page) error {
 	defer c.wg.Done()
 	logrus.Infof("Start crawl %s", page.Url.String())
@@ -145,6 +122,7 @@ func isLinkValid(link, host string) bool {
 	return false
 }
 
+//removeAnchor remove anchor from given string link
 func removeAnchor(s string) string {
 	if idx := strings.Index(s, "/#"); idx != -1 {
 		return s[:idx]
