@@ -2,26 +2,44 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/andskur/web-crawler"
 	"github.com/sirupsen/logrus"
 )
 
-var target = "https://monzo.com/"
+// usage constant provide help message
+const usage = "Usage:\n    {url}\nExample: ./web-crawler https://monzo.com\n"
+
+var errNoTarget = errors.New("no target provided")
 
 func main() {
-	crawler, err := crawler.NewCrawler(target)
+	if len(os.Args) < 2 {
+		fmt.Print(usage)
+		os.Exit(1)
+	}
+
+	target := os.Args[1]
+
+	if target == "" {
+		logrus.Error(errNoTarget)
+		os.Exit(1)
+	}
+
+	craw, err := crawler.NewCrawler(target)
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	crawler.StartCrawling()
+	craw.StartCrawling()
 
-	logrus.Info(crawler.Site.TotalPages)
-	logrus.Info(crawler.TotalDelay)
+	logrus.Info(craw.Site.TotalPages)
+	logrus.Info(craw.TotalDelay)
 
-	jsonFormat, err := json.MarshalIndent(crawler.Site, "", " ")
+	jsonFormat, err := json.MarshalIndent(craw.Site, "", " ")
 	if err != nil {
 		logrus.Fatal(err)
 	}

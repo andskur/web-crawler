@@ -6,7 +6,7 @@
 - [x] Save output to Json file
 - [x] Delete duplicate links
 - [x] Handle incorrect page format
-- [ ] CLI interface for interaction
+- [x] CLI interface for interaction
 - [ ] Two variant of sitemap (Struct, HashMap)
 - [ ] Options for different output (XML, JSON, STDOUT)
 - [ ] Verbos Cli option turn on detailed logging
