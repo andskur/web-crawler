@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -15,7 +16,7 @@ import (
 // for threadsafe operations with maps
 var mu sync.RWMutex
 
-//Crawler represent web-crawler structure
+// Crawler represent web-crawler structure
 type Crawler struct {
 	TargetUrl  *url.URL
 	Site       *Site
@@ -24,7 +25,7 @@ type Crawler struct {
 	wg         sync.WaitGroup
 }
 
-//NewCrawler creates new Crawler structure instance
+// NewCrawler creates new Crawler structure instance
 func NewCrawler(targetUrl string) (*Crawler, error) {
 	crawler := &Crawler{
 		HashMap: make(map[string][]string),
@@ -45,7 +46,7 @@ func NewCrawler(targetUrl string) (*Crawler, error) {
 	return crawler, nil
 }
 
-//StartCrawling starting crawling
+// StartCrawling starting crawling
 func (c *Crawler) StartCrawling() {
 	started := time.Now()
 
@@ -57,7 +58,7 @@ func (c *Crawler) StartCrawling() {
 	c.Site.TotalPages = len(c.HashMap)
 }
 
-//CrawlPage crawl given site page
+// CrawlPage crawl given site page
 func (c *Crawler) CrawlPage(page *Page) error {
 	defer c.wg.Done()
 	logrus.Infof("Start crawl %s", page.Url.String())
@@ -66,7 +67,20 @@ func (c *Crawler) CrawlPage(page *Page) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+
+	contentType := resp.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "text/html") {
+		mu.Lock()
+		delete(c.HashMap, page.Url.String())
+		mu.Unlock()
+		return errors.New("unsupported page format")
+	}
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logrus.Fatal(err)
+		}
+	}()
 
 	tokens := html.NewTokenizer(resp.Body)
 
@@ -78,7 +92,6 @@ func (c *Crawler) CrawlPage(page *Page) error {
 			if token := tokens.Token(); token.Data == "a" {
 				for _, attr := range token.Attr {
 					if link := removeAnchor(attr.Val); isLinkValid(link, c.TargetUrl.String()) && attr.Key == "href" {
-						//link = strings.TrimSuffix(link, "/")
 						childUrl, err := page.Url.Parse(link)
 						if err != nil {
 							return err
@@ -103,8 +116,10 @@ func (c *Crawler) CrawlPage(page *Page) error {
 						c.HashMap[page.Url.String()] = append(c.HashMap[page.Url.String()], childUrl.String())
 						mu.Unlock()
 
+						childPage := &Page{Url: childUrl}
+						page.Links = append(page.Links, childPage)
+
 						mu.Lock()
-						//_, ok := c.HashMap[childUrl.String()]
 						ok := inMap(childUrl.String(), c.HashMap)
 						mu.Unlock()
 						if ok {
@@ -115,10 +130,6 @@ func (c *Crawler) CrawlPage(page *Page) error {
 						c.HashMap[childUrl.String()] = []string{}
 						mu.Unlock()
 
-						childPage := &Page{Url: childUrl}
-
-						page.Links = append(page.Links, childPage)
-
 						c.wg.Add(1)
 						go c.CrawlPage(childPage)
 					}
@@ -128,9 +139,9 @@ func (c *Crawler) CrawlPage(page *Page) error {
 	}
 }
 
-//TODO move validation to Page methods
+// TODO move validation to Page methods
 
-//isLinkValid check if given link is valid for parsing
+// isLinkValid check if given link is valid for parsing
 func isLinkValid(link, host string) bool {
 	if (strings.HasPrefix(link, "/") || strings.Contains(link, host)) && !strings.Contains(link, "email-protection") {
 		return true
@@ -138,7 +149,7 @@ func isLinkValid(link, host string) bool {
 	return false
 }
 
-//removeAnchor remove anchor from given string link
+// removeAnchor remove anchor from given string link
 func removeAnchor(s string) string {
 	if idx := strings.Index(s, "/#"); idx != -1 {
 		return s[:idx]
@@ -146,20 +157,19 @@ func removeAnchor(s string) string {
 	return s
 }
 
-//inSlice checks if slice contain given string
+// inSlice checks if slice contain given string
 func inSlice(s string, slice []string) bool {
 	for _, v := range slice {
 		if s == v || v+"/" == s {
-			//if s == v {
 			return true
 		}
 	}
 	return false
 }
 
-//TODO need refactoring
+// TODO need refactoring
 
-//inMap check if map contain given link
+// inMap check if map contain given link
 func inMap(s string, m map[string][]string) bool {
 	/*if len(m[s]) > 0 || len(m[s + "/"]) > 0 || len(m[strings.TrimSuffix(s, "/")]) > 0 {
 		return true

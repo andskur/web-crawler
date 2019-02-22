@@ -21,7 +21,7 @@ func main() {
 	logrus.Info(crawler.Site.TotalPages)
 	logrus.Info(crawler.TotalDelay)
 
-	jsonFormat, err := json.MarshalIndent(crawler.HashMap, "", " ")
+	jsonFormat, err := json.MarshalIndent(crawler.Site, "", " ")
 	if err != nil {
 		logrus.Fatal(err)
 	}

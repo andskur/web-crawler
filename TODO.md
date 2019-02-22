@@ -5,7 +5,7 @@
 - [x] Restructurize application
 - [x] Save output to Json file
 - [x] Delete duplicate links
-- [ ] Handle incorrect page format
+- [x] Handle incorrect page format
 - [ ] CLI interface for interaction
 - [ ] Two variant of sitemap (Struct, HashMap)
 - [ ] Options for different output (XML, JSON, STDOUT)
@@ -13,3 +13,5 @@
 - [ ] Cosmetic cli prompt improvements
 - [ ] Unit testing
 - [ ] Benchmarks
+
+Indexing pdf page?
