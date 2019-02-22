@@ -32,7 +32,7 @@ func NewCrawler(targetUrl string) (*Crawler, error) {
 	}
 	crawler.HashMap[targetUrl] = []string{}
 
-	formatUrl, err := url.Parse(targetUrl)
+	formatUrl, err := url.ParseRequestURI(targetUrl)
 	if err != nil {
 		return nil, err
 	}
