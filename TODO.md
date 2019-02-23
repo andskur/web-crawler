@@ -8,9 +8,10 @@
 - [x] Handle incorrect page format
 - [x] CLI interface for interaction
 - [ ] Two variant of sitemap (Struct, HashMap)
-- [ ] Options for different output (XML, JSON, STDOUT)
+- [ ] Options for different output formats (XML, JSON, STDOUT)
 - [ ] Verbos Cli option turn on detailed logging
 - [ ] Cosmetic cli prompt improvements
+- [ ] README file
 - [ ] Unit testing
 - [ ] Benchmarks
 

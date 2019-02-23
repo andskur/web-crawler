@@ -130,8 +130,8 @@ func (c *Crawler) CrawlPage(page *Page) error {
 						c.HashMap[childUrl.String()] = []string{}
 						mu.Unlock()
 
-						c.wg.Add(1)
-						go c.CrawlPage(childPage)
+						// c.wg.Add(1)
+						// go c.CrawlPage(childPage)
 					}
 				}
 			}
