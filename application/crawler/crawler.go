@@ -10,6 +10,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/html"
+
+	"github.com/andskur/web-crawler/application/site"
 )
 
 // global Read/Write mutex variable
@@ -19,7 +21,7 @@ var mu sync.RWMutex
 // Crawler represent web-crawler structure
 type Crawler struct {
 	TargetUrl  *url.URL
-	Site       *Site
+	Site       *site.Site
 	HashMap    map[string][]string
 	TotalDelay time.Duration
 	wg         sync.WaitGroup
@@ -38,8 +40,8 @@ func NewCrawler(targetUrl string) (*Crawler, error) {
 	}
 	crawler.TargetUrl = formatUrl
 
-	crawler.Site = &Site{
-		EntryPage: &Page{
+	crawler.Site = &site.Site{
+		EntryPage: &site.Page{
 			Url: formatUrl,
 		},
 	}
@@ -59,7 +61,7 @@ func (c *Crawler) StartCrawling() {
 }
 
 // CrawlPage crawl given site page
-func (c *Crawler) CrawlPage(page *Page) error {
+func (c *Crawler) CrawlPage(page *site.Page) error {
 	defer c.wg.Done()
 	logrus.Infof("Start crawl %s", page.Url.String())
 
@@ -116,7 +118,7 @@ func (c *Crawler) CrawlPage(page *Page) error {
 						c.HashMap[page.Url.String()] = append(c.HashMap[page.Url.String()], childUrl.String())
 						mu.Unlock()
 
-						childPage := &Page{Url: childUrl}
+						childPage := &site.Page{Url: childUrl}
 						page.Links = append(page.Links, childPage)
 
 						mu.Lock()
@@ -130,8 +132,8 @@ func (c *Crawler) CrawlPage(page *Page) error {
 						c.HashMap[childUrl.String()] = []string{}
 						mu.Unlock()
 
-						// c.wg.Add(1)
-						// go c.CrawlPage(childPage)
+						c.wg.Add(1)
+						go c.CrawlPage(childPage)
 					}
 				}
 			}

@@ -8,49 +8,46 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/andskur/web-crawler"
 	"github.com/sirupsen/logrus"
+
+	"github.com/andskur/web-crawler/application"
 )
 
 // usage constant provide help message
-const usage = "Usage:\n    {url} -{flags} \nExample: ./web-crawler https://monzo.com\n"
+const usage = "Usage:\n    {url} {-flags} \nExample: ./web-crawler https://monzo.com"
 
-var errNoTarget = errors.New("no target provided")
+var (
+	errNoTarget = errors.New("no target url provided")
+)
 
 func main() {
 	target := getTarget()
 
 	flagSet := flag.NewFlagSet("set", flag.ExitOnError)
-	fn := flagSet.String("filename", "", "Filename to write output. Example -output sitemap")
+	fn := flagSet.String("fn", "", "-fn {filename} filename to write output")
+	mt := flagSet.String("mt", "hash", "-mt {hash || tree} sitemap type, hash map or nested tree (default \"hash\")")
+
 	err := flagSet.Parse(os.Args[2:])
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	craw, err := crawler.NewCrawler(target)
+	app, err := application.NewApplication(target, *fn, *mt)
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	craw.StartCrawling()
+	app.StartCrawling()
 
-	logrus.Info(craw.Site.TotalPages)
-	logrus.Info(craw.TotalDelay)
+	logrus.Info(app.Site.TotalPages)
+	logrus.Info(app.TotalDelay)
 
-	jsonFormat, err := json.MarshalIndent(craw.Site, "", " ")
+	jsonFormat, err := json.MarshalIndent(app.Output, "", " ")
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	var fileName string
-	switch *fn {
-	case "":
-		fileName = craw.Site.EntryPage.Url.Host + ".json"
-	default:
-		fileName = *fn + ".json"
-	}
-
-	if err := ioutil.WriteFile(fileName, jsonFormat, 0644); err != nil {
+	if err := ioutil.WriteFile(app.Filename, jsonFormat, 0644); err != nil {
 		logrus.Fatal(err)
 	}
 }
@@ -58,7 +55,7 @@ func main() {
 // getTarget parse target URL from command lines argument
 func getTarget() (target string) {
 	if len(os.Args) < 2 {
-		fmt.Print(usage)
+		fmt.Println(usage)
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
