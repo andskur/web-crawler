@@ -13,6 +13,7 @@ type Config struct {
 	OutputFormat writer.Format
 }
 
+// NewConfig create new config instance from given parameters
 func NewConfig(mapType, outputFormat string) (*Config, error) {
 	format, err := writer.ParseFormats(outputFormat)
 	if err != nil {
