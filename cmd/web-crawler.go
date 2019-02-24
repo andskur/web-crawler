@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -49,14 +48,12 @@ func main() {
 // getTarget parse target URL from command lines argument
 func getTarget() (target string) {
 	if len(os.Args) < 2 {
-		fmt.Println(usage)
-		flag.PrintDefaults()
+		logrus.Fatal(usage)
 		os.Exit(1)
 	}
 	target = os.Args[1]
 	if target == "" {
-		logrus.Error(errNoTarget)
-		os.Exit(1)
+		logrus.Fatal(errNoTarget)
 	}
 	return
 }

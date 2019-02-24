@@ -2,7 +2,7 @@ package site
 
 import (
 	"errors"
-	"net/url"
+	// "net/url"
 	"strings"
 	"sync"
 
@@ -23,7 +23,7 @@ var (
 
 // Site represent Web-site structure
 type Site struct {
-	Url        *url.URL      `json:"url" xml:"url"`
+	Url        *Url          `json:"url" xml:"url"`
 	TotalPages int           `json:"total_pages" xml:"total_pages"`
 	PageTree   *Page         `json:"tree,omitempty" xml:"tree,omitempty"`
 	HashMap    PagesHashMap  `json:"map,omitempty" xml:"map,omitempty"`
@@ -32,7 +32,7 @@ type Site struct {
 
 // NewSite create new site from given target Url
 func NewSite(targetUrl string) (*Site, error) {
-	entryPage, err := url.ParseRequestURI(targetUrl)
+	entryPage, err := ParseRequestURI(targetUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -86,14 +86,14 @@ func (s *Site) AddPageToSite(page Page) error {
 
 // validatePage validate page before adding to current site
 // return Urls struct if valid
-func (s Site) validatePage(link string, parent *Page) (*url.URL, error) {
+func (s Site) validatePage(link string, parent *Page) (*Url, error) {
 	if strings.Contains(link, "email-protection") {
 		return nil, errEmailProtected
 	}
 	if err := s.isLinkInHost(link); err != nil {
 		return nil, errExternalLink
 	}
-	uri, err := parent.Url.Parse(link)
+	uri, err := parent.Url.ParseUrl(link)
 	if err != nil {
 		return nil, errParsedLink
 	}
