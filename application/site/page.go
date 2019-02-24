@@ -7,8 +7,3 @@ type Page struct {
 	TotalLinks int     `json:"total,omitempty" xml:"total,omitempty"`
 	Links      []*Page `json:"links,omitempty" xml:"links>page,omitempty"`
 }
-
-// NewPage create new Page from url string
-func NewPage(url *Url) *Page {
-	return &Page{Url: url}
-}

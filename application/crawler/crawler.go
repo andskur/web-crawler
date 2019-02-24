@@ -13,10 +13,6 @@ import (
 	"github.com/andskur/web-crawler/application/site"
 )
 
-// global Read/Write mutex variable
-// for threadsafe operations with maps
-// var mu sync.RWMutex
-
 // Crawler represent web-crawler structure
 type Crawler struct {
 	Site     *site.Site

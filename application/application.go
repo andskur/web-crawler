@@ -44,10 +44,10 @@ func NewApplication(target, fileName, mapType, outputFormat string) (*Applicatio
 
 	app.setFilename(fileName)
 
-	if err := app.setOutput(); err != nil {
+	/*if err := app.setOutput(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
-	}
+	}*/
 
 	logrus.SetFormatter(&logrus.TextFormatter{
 		// DisableColors: true,
@@ -97,5 +97,31 @@ func (a *Application) initWriter() error {
 		return err
 	}
 	a.Writer = wrt
+	return nil
+}
+
+// TODO don't like output methods... Best way - interface and enum, like IWriter
+
+// FormatOutput format application output after execution
+func (a *Application) formatOutput() error {
+	switch a.MapType {
+	case "hash":
+		a.Site.PageTree = nil
+	case "tree":
+		a.Site.HashMap = nil
+	default:
+		return errInvalidMapType
+	}
+	return nil
+}
+
+// WriteOutput write Application output to file
+func (a *Application) WriteOutput() error {
+	if err := a.formatOutput(); err != nil {
+		return err
+	}
+	if err := a.Writer.WriteTo(a.Site, a.Filename); err != nil {
+		return err
+	}
 	return nil
 }

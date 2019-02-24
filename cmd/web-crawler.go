@@ -40,7 +40,7 @@ func main() {
 	logrus.Info(app.Site.TotalPages)
 	logrus.Info(app.Duration)
 
-	if err := app.Writer.WriteTo(app.Output, app.Filename); err != nil {
+	if err := app.WriteOutput(); err != nil {
 		logrus.Fatal(err)
 	}
 }

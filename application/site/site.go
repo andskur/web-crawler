@@ -1,8 +1,8 @@
 package site
 
 import (
+	"encoding/xml"
 	"errors"
-	// "net/url"
 	"strings"
 	"sync"
 
@@ -19,10 +19,9 @@ var (
 	errEmailProtected  = errors.New("link is email-protected")
 )
 
-// var mu = sync.RWMutex{}
-
 // Site represent Web-site structure
 type Site struct {
+	XMLName    xml.Name      `json:"-" xml:"site"`
 	Url        *Url          `json:"url" xml:"url"`                       // basic site Url
 	TotalPages int           `json:"total_pages" xml:"total_pages"`       // total counts site page
 	PageTree   *Page         `json:"tree,omitempty" xml:"tree,omitempty"` // site page tree
@@ -58,7 +57,7 @@ func (s *Site) AddPageToParent(link string, parent *Page) (*Page, error) {
 	parent.TotalLinks++
 
 	// create new page
-	page := NewPage(uri)
+	page := &Page{Url: uri}
 
 	// add child page to parent links slice
 	s.Mu.Lock()
