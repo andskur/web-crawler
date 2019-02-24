@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/andskur/web-crawler/application/writer"
-
 	"github.com/andskur/web-crawler/application/crawler"
+	"github.com/andskur/web-crawler/application/writer"
+	"github.com/andskur/web-crawler/config"
 )
 
 var errInvalidMapType = errors.New("Invalid sitemap type\nSupported types:\n\t hash - Hash Map\n\t tree - page tree")
@@ -16,30 +16,15 @@ var errInvalidMapType = errors.New("Invalid sitemap type\nSupported types:\n\t h
 type Application struct {
 	*crawler.Crawler
 	Writer writer.IWriter
-	*Config
+	*config.Config
 	Output interface{}
-}
-
-// Config represent Crawler Application config
-type Config struct {
-	Filename     string
-	MapType      string
-	OutputFormat writer.Format
-}
-
-func NewConfig(mapType, outputFormat string) (*Config, error) {
-	format, err := writer.ParseFormats(outputFormat)
-	if err != nil {
-		return nil, err
-	}
-	return &Config{MapType: mapType, OutputFormat: format}, nil
 }
 
 // NewApplication create new Web Crawler Application instance with
 // from given configuration parameters
 func NewApplication(target, fileName, mapType, outputFormat string) (*Application, error) {
 
-	cfg, err := NewConfig(mapType, outputFormat)
+	cfg, err := config.NewConfig(mapType, outputFormat)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +54,9 @@ func NewApplication(target, fileName, mapType, outputFormat string) (*Applicatio
 func (a *Application) setFilename(fileName string) {
 	switch fileName {
 	case "":
-		a.formatFilename(a.SiteTree.EntryPage.Url.Host)
+		a.FormatFilename(a.SiteTree.EntryPage.Url.Host)
 	default:
-		a.formatFilename(fileName)
+		a.FormatFilename(fileName)
 	}
 }
 
@@ -106,9 +91,4 @@ func (a *Application) initWriter() error {
 	}
 	a.Writer = wrt
 	return nil
-}
-
-// formatFilename format filename to correct value
-func (c *Config) formatFilename(name string) {
-	c.Filename = fmt.Sprintf("%s.%s", name, c.OutputFormat)
 }
