@@ -21,8 +21,8 @@ var mu sync.RWMutex
 // Crawler represent web-crawler structure
 type Crawler struct {
 	TargetUrl  *url.URL
-	Site       *site.Site
-	HashMap    map[string][]string
+	SiteTree   *site.Site
+	HashMap    site.PagesHashMap
 	TotalDelay time.Duration
 	wg         sync.WaitGroup
 }
@@ -40,7 +40,7 @@ func NewCrawler(targetUrl string) (*Crawler, error) {
 	}
 	crawler.TargetUrl = formatUrl
 
-	crawler.Site = &site.Site{
+	crawler.SiteTree = &site.Site{
 		EntryPage: &site.Page{
 			Url: formatUrl,
 		},
@@ -53,11 +53,11 @@ func (c *Crawler) StartCrawling() {
 	started := time.Now()
 
 	c.wg.Add(1)
-	go c.CrawlPage(c.Site.EntryPage)
+	go c.CrawlPage(c.SiteTree.EntryPage)
 	c.wg.Wait()
 
 	c.TotalDelay = time.Since(started)
-	c.Site.TotalPages = len(c.HashMap)
+	c.SiteTree.TotalPages = len(c.HashMap)
 }
 
 // CrawlPage crawl given site page

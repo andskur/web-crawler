@@ -8,9 +8,10 @@
 - [x] Handle incorrect page format
 - [x] CLI interface for interaction
 - [x] Two variant of sitemap (Tree, HashMap)
-- [ ] Options for different output formats (XML, JSON, STDOUT)
+- [x] Options for different output formats (XML, JSON, STDOUT)
 - [ ] Verbos Cli option turn on detailed logging
 - [ ] Cosmetic cli prompt improvements
+- [ ] Errors handling in GoRoutines
 - [ ] README file
 - [ ] Unit testing
 - [ ] Benchmarks
