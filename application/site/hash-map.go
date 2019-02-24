@@ -1,6 +1,7 @@
 package site
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"sort"
 )
@@ -8,18 +9,31 @@ import (
 // PagesHashMap represent Pages Hash Map structure type
 type PagesHashMap map[string][]string
 
-// hashPage represent PagesHashMap formatter for XML marshaling
-type hashPage struct {
-	XMLName    xml.Name  `xml:"page"`
-	Url        string    `xml:"url"`
-	TotalLinks int       `xml:"total"`
-	Links      *[]string `xml:"links>url,omitempty"`
+// MarshalJSON correct formatted JSON marshaling
+// for Page Hash Map structure type
+func (p PagesHashMap) MarshalJSON() ([]byte, error) {
+	pages := p.mapToHashPages()
+	return json.Marshal(pages)
 }
 
-// MarshalXML corrects XML marshaling
+// MarshalXML correct formatted XML marshaling
 // for Page Hash Map structure type
 func (p PagesHashMap) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	// FIXME need to hide empty list fields
+	pages := p.mapToHashPages()
+
+	err := e.EncodeElement(struct {
+		XMLName xml.Name    `xml:"page"`
+		Pages   *[]hashPage `xml:"pages"`
+	}{
+		Pages: pages}, start)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p PagesHashMap) mapToHashPages() *[]hashPage {
 	var pages []hashPage
 	for url, links := range p {
 		page := hashPage{Url: url}
@@ -31,18 +45,16 @@ func (p PagesHashMap) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 		page.Links = &lks
 		pages = append(pages, page)
 	}
-
 	sort.Slice(pages, func(i, j int) bool {
 		return len(pages[i].Url) < len(pages[j].Url)
 	})
+	return &pages
+}
 
-	err := e.EncodeElement(struct {
-		XMLName xml.Name   `xml:"page"`
-		Pages   []hashPage `xml:"pages"`
-	}{
-		Pages: pages}, start)
-	if err != nil {
-		return err
-	}
-	return nil
+// hashPage represent PagesHashMap formatter for XML and JSON marshaling
+type hashPage struct {
+	XMLName    xml.Name  `json:"-" xml:"page"`
+	Url        string    `json:"url "xml:"url"`
+	TotalLinks int       `json:"total_links" xml:"total_links"`
+	Links      *[]string `json:"links" xml:"links>url,omitempty"`
 }
