@@ -15,7 +15,7 @@ var errInvalidMapType = errors.New("Invalid sitemap type\nSupported types:\n\t h
 // Application represent Crawler Application structure
 type Application struct {
 	*crawler.Crawler
-	writer.IWriter
+	Writer writer.IWriter
 	*Config
 	Output interface{}
 }
@@ -104,7 +104,7 @@ func (a *Application) initWriter() error {
 	if err != nil {
 		return err
 	}
-	a.IWriter = wrt
+	a.Writer = wrt
 	return nil
 }
 

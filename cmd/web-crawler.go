@@ -41,7 +41,7 @@ func main() {
 	logrus.Info(app.SiteTree.TotalPages)
 	logrus.Info(app.TotalDelay)
 
-	if err := app.WriteTo(app.Output, app.Filename); err != nil {
+	if err := app.Writer.WriteTo(app.Output, app.Filename); err != nil {
 		logrus.Fatal(err)
 	}
 }
