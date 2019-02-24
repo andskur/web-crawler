@@ -1,17 +1,15 @@
 package main
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/andskur/web-crawler/application"
+	"github.com/andskur/web-crawler/writer"
 )
 
 // usage constant provide help message
@@ -44,17 +42,14 @@ func main() {
 	logrus.Info(app.SiteTree.TotalPages)
 	logrus.Info(app.TotalDelay)
 
-	switch app.OutputFormat {
-	case "json":
-		if err := writeJson(app.Output, app.Filename); err != nil {
-			logrus.Fatal(err)
-		}
-	case "xml":
-		if err := writeXml(app.Output, app.Filename); err != nil {
-			logrus.Fatal(err)
-		}
+	wrt, err := writer.NewWriter(app.OutputFormat)
+	if err != nil {
+		logrus.Fatal(err)
 	}
 
+	if err := wrt.WriteTo(app.Output, app.Filename); err != nil {
+		logrus.Fatal(err)
+	}
 }
 
 // getTarget parse target URL from command lines argument
@@ -70,30 +65,4 @@ func getTarget() (target string) {
 		os.Exit(1)
 	}
 	return
-}
-
-// writeJson write json application data to json file with providing name
-func writeJson(data interface{}, fileName string) error {
-	jsonFormat, err := json.MarshalIndent(data, "", " ")
-	if err != nil {
-		return err
-	}
-
-	if err := ioutil.WriteFile(fileName, jsonFormat, 0644); err != nil {
-		return err
-	}
-	return nil
-}
-
-// writeXml write xml application data to xml file with providing name
-func writeXml(data interface{}, fileName string) error {
-	xmlFormat, err := xml.MarshalIndent(data, "", " ")
-	if err != nil {
-		return err
-	}
-
-	if err := ioutil.WriteFile(fileName, xmlFormat, 0644); err != nil {
-		return err
-	}
-	return nil
 }
