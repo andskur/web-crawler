@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/andskur/web-crawler/application/crawler"
 	"github.com/andskur/web-crawler/application/writer"
 	"github.com/andskur/web-crawler/config"
@@ -14,16 +16,15 @@ var errInvalidMapType = errors.New("Invalid sitemap type\nSupported types:\n\t h
 
 // Application represent Crawler Application structure
 type Application struct {
+	*config.Config
 	*crawler.Crawler
 	Writer writer.IWriter
-	*config.Config
 	Output interface{}
 }
 
 // NewApplication create new Web Crawler Application instance with
 // from given configuration parameters
 func NewApplication(target, fileName, mapType, outputFormat string) (*Application, error) {
-
 	cfg, err := config.NewConfig(mapType, outputFormat)
 	if err != nil {
 		return nil, err
@@ -47,6 +48,12 @@ func NewApplication(target, fileName, mapType, outputFormat string) (*Applicatio
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	logrus.SetFormatter(&logrus.TextFormatter{
+		// DisableColors: true,
+		FullTimestamp: true,
+	})
+
 	return app, nil
 }
 

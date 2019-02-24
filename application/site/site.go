@@ -15,19 +15,22 @@ type Site struct {
 // Page represent web-site page structure with own URL
 // and slice of the links - pointers to other pages
 type Page struct {
-	Url   *url.URL
-	Links []*Page
+	Url        *url.URL
+	TotalLinks int
+	Links      []*Page
 }
 
 // MarshalJSON corrects Json marshaling
 // for page structure type
 func (p Page) MarshalJSON() ([]byte, error) {
 	page := struct {
-		Url   string  `json:"url"`
-		Links []*Page `json:"links,omitempty"`
+		Url        string  `json:"url"`
+		TotalLinks int     `json:"total_links"`
+		Links      []*Page `json:"links,omitempty"`
 	}{
-		Url:   p.Url.String(),
-		Links: p.Links,
+		Url:        p.Url.String(),
+		TotalLinks: p.TotalLinks,
+		Links:      p.Links,
 	}
 	return json.Marshal(page)
 }

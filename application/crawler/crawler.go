@@ -114,6 +114,8 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 							continue
 						}
 
+						page.TotalLinks++
+
 						mu.Lock()
 						c.HashMap[page.Url.String()] = append(c.HashMap[page.Url.String()], childUrl.String())
 						mu.Unlock()

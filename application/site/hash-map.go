@@ -10,9 +10,10 @@ type PagesHashMap map[string][]string
 
 // hashPage represent PagesHashMap formatter for XML marshaling
 type hashPage struct {
-	XMLName xml.Name  `xml:"page"`
-	Url     string    `xml:"url"`
-	Links   *[]string `xml:"links>url,omitempty"`
+	XMLName    xml.Name  `xml:"page"`
+	Url        string    `xml:"url"`
+	TotalLinks int       `xml:"total"`
+	Links      *[]string `xml:"links>url,omitempty"`
 }
 
 // MarshalXML corrects XML marshaling
@@ -26,6 +27,7 @@ func (p PagesHashMap) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 		for _, link := range links {
 			lks = append(lks, link)
 		}
+		page.TotalLinks = len(lks)
 		page.Links = &lks
 		pages = append(pages, page)
 	}
