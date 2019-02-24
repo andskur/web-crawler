@@ -39,7 +39,7 @@ func main() {
 	app.StartCrawling()
 
 	logrus.Info(app.SiteTree.TotalPages)
-	logrus.Info(app.TotalDelay)
+	logrus.Info(app.Duration)
 
 	if err := app.Writer.WriteTo(app.Output, app.Filename); err != nil {
 		logrus.Fatal(err)

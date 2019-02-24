@@ -20,11 +20,11 @@ var mu sync.RWMutex
 
 // Crawler represent web-crawler structure
 type Crawler struct {
-	TargetUrl  *url.URL
-	SiteTree   *site.Site
-	HashMap    site.PagesHashMap
-	TotalDelay time.Duration
-	wg         sync.WaitGroup
+	TargetUrl *url.URL
+	SiteTree  *site.Site
+	HashMap   site.PagesHashMap
+	Duration  time.Duration
+	wg        sync.WaitGroup
 }
 
 // NewCrawler creates new Crawler structure instance
@@ -50,13 +50,12 @@ func NewCrawler(targetUrl string) (*Crawler, error) {
 
 // StartCrawling starting crawling
 func (c *Crawler) StartCrawling() {
-	started := time.Now()
+	defer c.calcDuration(time.Now())
 
 	c.wg.Add(1)
 	go c.CrawlPage(c.SiteTree.EntryPage)
 	c.wg.Wait()
 
-	c.TotalDelay = time.Since(started)
 	c.SiteTree.TotalPages = len(c.HashMap)
 }
 
@@ -134,13 +133,18 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 						c.HashMap[childUrl.String()] = []string{}
 						mu.Unlock()
 
-						// c.wg.Add(1)
-						// go c.CrawlPage(childPage)
+						c.wg.Add(1)
+						go c.CrawlPage(childPage)
 					}
 				}
 			}
 		}
 	}
+}
+
+// duration calculate total Crawler execution time
+func (c *Crawler) calcDuration(invocation time.Time) {
+	c.Duration = time.Since(invocation)
 }
 
 // TODO move validation to Page methods
