@@ -61,7 +61,7 @@ func NewApplication(target, fileName, mapType, outputFormat string) (*Applicatio
 func (a *Application) setFilename(fileName string) {
 	switch fileName {
 	case "":
-		a.FormatFilename(a.SiteTree.EntryPage.Url.Host)
+		a.FormatFilename(a.Site.Url.Host)
 	default:
 		a.FormatFilename(fileName)
 	}
@@ -71,9 +71,9 @@ func (a *Application) setFilename(fileName string) {
 func (a *Application) setOutput() error {
 	switch a.MapType {
 	case "hash":
-		a.Output = a.HashMap
+		a.Output = a.Site.HashMap
 	case "tree":
-		a.Output = a.SiteTree
+		a.Output = a.Site
 	default:
 		return errInvalidMapType
 	}

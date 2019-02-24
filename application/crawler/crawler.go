@@ -3,7 +3,6 @@ package crawler
 import (
 	"errors"
 	"net/http"
-	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -20,31 +19,19 @@ var mu sync.RWMutex
 
 // Crawler represent web-crawler structure
 type Crawler struct {
-	TargetUrl *url.URL
-	SiteTree  *site.Site
-	HashMap   site.PagesHashMap
-	Duration  time.Duration
-	wg        sync.WaitGroup
+	Site     *site.Site
+	Duration time.Duration
+	wg       sync.WaitGroup
 }
 
 // NewCrawler creates new Crawler structure instance
 func NewCrawler(targetUrl string) (*Crawler, error) {
-	crawler := &Crawler{
-		HashMap: make(map[string][]string),
-	}
-	crawler.HashMap[targetUrl] = []string{}
-
-	formatUrl, err := url.ParseRequestURI(targetUrl)
+	crawSite, err := site.NewSite(targetUrl)
 	if err != nil {
 		return nil, err
 	}
-	crawler.TargetUrl = formatUrl
+	crawler := &Crawler{Site: crawSite}
 
-	crawler.SiteTree = &site.Site{
-		EntryPage: &site.Page{
-			Url: formatUrl,
-		},
-	}
 	return crawler, nil
 }
 
@@ -53,10 +40,10 @@ func (c *Crawler) StartCrawling() {
 	defer c.calcDuration(time.Now())
 
 	c.wg.Add(1)
-	go c.CrawlPage(c.SiteTree.EntryPage)
+	go c.CrawlPage(c.Site.PageTree)
 	c.wg.Wait()
 
-	c.SiteTree.TotalPages = len(c.HashMap)
+	c.Site.TotalPages = len(c.Site.HashMap)
 }
 
 // CrawlPage crawl given site page
@@ -72,7 +59,7 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 	contentType := resp.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, "text/html") {
 		mu.Lock()
-		delete(c.HashMap, page.Url.String())
+		delete(c.Site.HashMap, page.Url.String())
 		mu.Unlock()
 		return errors.New("unsupported page format")
 	}
@@ -92,7 +79,7 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 		case html.StartTagToken, html.EndTagToken:
 			if token := tokens.Token(); token.Data == "a" {
 				for _, attr := range token.Attr {
-					if link := removeAnchor(attr.Val); isLinkValid(link, c.TargetUrl.String()) && attr.Key == "href" {
+					if link := removeAnchor(attr.Val); isLinkValid(link, c.Site.Url.String()) && attr.Key == "href" {
 						childUrl, err := page.Url.Parse(link)
 						if err != nil {
 							return err
@@ -107,7 +94,7 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 						}
 
 						mu.Lock()
-						contain := inSlice(childUrl.String(), c.HashMap[page.Url.String()])
+						contain := inSlice(childUrl.String(), c.Site.HashMap[page.Url.String()])
 						mu.Unlock()
 						if contain {
 							continue
@@ -116,21 +103,21 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 						page.TotalLinks++
 
 						mu.Lock()
-						c.HashMap[page.Url.String()] = append(c.HashMap[page.Url.String()], childUrl.String())
+						c.Site.HashMap[page.Url.String()] = append(c.Site.HashMap[page.Url.String()], childUrl.String())
 						mu.Unlock()
 
 						childPage := &site.Page{Url: childUrl}
 						page.Links = append(page.Links, childPage)
 
 						mu.Lock()
-						ok := inMap(childUrl.String(), c.HashMap)
+						ok := inMap(childUrl.String(), c.Site.HashMap)
 						mu.Unlock()
 						if ok {
 							continue
 						}
 
 						mu.Lock()
-						c.HashMap[childUrl.String()] = []string{}
+						c.Site.HashMap[childUrl.String()] = []string{}
 						mu.Unlock()
 
 						c.wg.Add(1)

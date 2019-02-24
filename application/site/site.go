@@ -1,57 +1,29 @@
 package site
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"net/url"
 )
 
-// SiteTree represent Web-site structure
+// Site represent Web-site structure
 type Site struct {
-	TotalPages int   `json:"total_pages" xml:"total_pages"`
-	EntryPage  *Page `json:"entry_page" xml:"entry_page"`
+	Url        *url.URL     `json:"url" xml:"url"`
+	TotalPages int          `json:"total_pages" xml:"total_pages"`
+	PageTree   *Page        `json:"tree,omitempty" xml:"tree,omitempty"`
+	HashMap    PagesHashMap `json:"map,omitempty" xml:"map,omitempty"`
 }
 
-// Page represent web-site page structure with own URL
-// and slice of the links - pointers to other pages
-type Page struct {
-	Url        *url.URL
-	TotalLinks int
-	Links      []*Page
-}
-
-type Url url.URL
-
-// MarshalJSON corrects Json marshaling
-// for page structure type
-func (p Page) MarshalJSON() ([]byte, error) {
-	page := struct {
-		Url        string  `json:"url"`
-		TotalLinks int     `json:"total,omitempty"`
-		Links      []*Page `json:"links,omitempty"`
-	}{
-		Url:        p.Url.String(),
-		TotalLinks: p.TotalLinks,
-		Links:      p.Links,
-	}
-	return json.Marshal(page)
-}
-
-// MarshalXML corrects XML marshaling
-// for Page Tree structure type
-func (p Page) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	// FIXME need to hide empty list fields
-	err := e.EncodeElement(struct {
-		XMLName    xml.Name `xml:"page"`
-		Url        string   `xml:"url"`
-		TotalLinks int      `xml:"total,omitempty"`
-		Links      []*Page  `xml:"links>page,omitempty"`
-	}{
-		Url:        p.Url.String(),
-		TotalLinks: p.TotalLinks,
-		Links:      p.Links}, start)
+// NewSite create new site from given target Url
+func NewSite(targetUrl string) (*Site, error) {
+	entryPage, err := url.ParseRequestURI(targetUrl)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	site := &Site{
+		Url: entryPage,
+		PageTree: &Page{
+			Url: entryPage,
+		},
+		HashMap: make(map[string][]string),
+	}
+	return site, nil
 }
