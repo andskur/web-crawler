@@ -73,7 +73,7 @@ func (a *Application) setOutput() error {
 	case "hash":
 		a.Output = a.Site.HashMap
 	case "tree":
-		a.Output = a.Site
+		a.Output = a.Site.PageTree
 	default:
 		return errInvalidMapType
 	}

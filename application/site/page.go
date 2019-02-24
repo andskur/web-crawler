@@ -14,6 +14,11 @@ type Page struct {
 	Links      []*Page
 }
 
+// NewPage create new Page from url string
+func NewPage(url *url.URL) *Page {
+	return &Page{Url: url}
+}
+
 // MarshalJSON corrects Json marshaling
 // for page structure type
 func (p Page) MarshalJSON() ([]byte, error) {
