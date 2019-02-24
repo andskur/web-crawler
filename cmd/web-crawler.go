@@ -9,7 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/andskur/web-crawler/application"
-	"github.com/andskur/web-crawler/writer"
 )
 
 // usage constant provide help message
@@ -42,12 +41,7 @@ func main() {
 	logrus.Info(app.SiteTree.TotalPages)
 	logrus.Info(app.TotalDelay)
 
-	wrt, err := writer.NewWriter(app.OutputFormat)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	if err := wrt.WriteTo(app.Output, app.Filename); err != nil {
+	if err := app.WriteTo(app.Output, app.Filename); err != nil {
 		logrus.Fatal(err)
 	}
 }

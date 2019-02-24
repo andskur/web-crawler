@@ -3,8 +3,8 @@ package writer
 import (
 	"errors"
 
-	"github.com/andskur/web-crawler/writer/json"
-	"github.com/andskur/web-crawler/writer/xml"
+	"github.com/andskur/web-crawler/application/writer/json"
+	"github.com/andskur/web-crawler/application/writer/xml"
 )
 
 var ErrUnsupportedWriter = errors.New("unsupported writer type")
@@ -15,11 +15,11 @@ type IWriter interface {
 }
 
 // NewWriter create new writer instance
-func NewWriter(wtype string) (wrt IWriter, err error) {
+func NewWriter(wtype Format) (wrt IWriter, err error) {
 	switch wtype {
-	case "json":
+	case JSON:
 		wrt = json.WriterJson{}
-	case "xml":
+	case XML:
 		wrt = xml.WriterXml{}
 	default:
 		err = ErrUnsupportedWriter
