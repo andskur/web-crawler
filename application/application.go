@@ -2,12 +2,11 @@ package application
 
 import (
 	"errors"
-	"fmt"
-	"os"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/andskur/web-crawler/application/crawler"
+	"github.com/andskur/web-crawler/application/site"
 	"github.com/andskur/web-crawler/application/writer"
 	"github.com/andskur/web-crawler/config"
 )
@@ -23,66 +22,56 @@ type Application struct {
 
 // NewApplication create new Web Crawler Application instance with
 // from given configuration parameters
-func NewApplication(target, fileName, mapType, outputFormat string) (*Application, error) {
-	cfg, err := config.NewConfig(mapType, outputFormat)
-	if err != nil {
+func NewApplication(cfg *config.Config) (*Application, error) {
+	app := &Application{Config: cfg}
+	if err := app.initApp(); err != nil {
 		return nil, err
 	}
 
-	app := &Application{Config: cfg}
+	return app, nil
+}
 
-	if err := app.initWriter(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+// initApp initialize all necessary Application instances
+func (a *Application) initApp() error {
+	// init Writer
+	if err := a.initWriter(); err != nil {
+		return err
 	}
 
-	if err := app.initCrawler(target); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	// init Crawler
+	if err := a.initCrawler(a.Target); err != nil {
+		return err
 	}
 
-	app.setFilename(fileName)
-
-	/*if err := app.setOutput(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}*/
-
+	// init Logger
 	logrus.SetFormatter(&logrus.TextFormatter{
 		// DisableColors: true,
 		FullTimestamp: true,
 	})
 
-	return app, nil
-}
-
-// setFilename set output file correct name with extension
-func (a *Application) setFilename(fileName string) {
-	switch fileName {
-	case "":
-		a.FormatFilename(a.Site.Url.Host)
-	default:
-		a.FormatFilename(fileName)
-	}
-}
-
-// initWriter initialize application Crawler instance
-func (a *Application) initCrawler(target string) error {
-	craw, err := crawler.NewCrawler(target)
-	if err != nil {
-		return err
-	}
-	a.Crawler = craw
 	return nil
 }
 
+// initWriter initialize application Crawler instance
+func (a *Application) initCrawler(target *site.Url) (err error) {
+	a.Crawler, err = crawler.NewCrawler(target)
+	return
+}
+
 // initWriter initialize application Output Writer instance
-func (a *Application) initWriter() error {
-	wrt, err := writer.NewWriter(a.OutputFormat)
-	if err != nil {
+func (a *Application) initWriter() (err error) {
+	a.Writer, err = writer.NewWriter(a.Output)
+	return
+}
+
+// WriteOutput write Application output to file
+func (a *Application) WriteOutput() error {
+	if err := a.formatOutput(); err != nil {
 		return err
 	}
-	a.Writer = wrt
+	if err := a.Writer.WriteTo(a.Site, a.Filename); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -97,17 +86,6 @@ func (a *Application) formatOutput() error {
 		a.Site.HashMap = nil
 	default:
 		return errInvalidMapType
-	}
-	return nil
-}
-
-// WriteOutput write Application output to file
-func (a *Application) WriteOutput() error {
-	if err := a.formatOutput(); err != nil {
-		return err
-	}
-	if err := a.Writer.WriteTo(a.Site, a.Filename); err != nil {
-		return err
 	}
 	return nil
 }

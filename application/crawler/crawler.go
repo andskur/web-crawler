@@ -21,7 +21,7 @@ type Crawler struct {
 }
 
 // NewCrawler creates new Crawler structure instance
-func NewCrawler(targetUrl string) (*Crawler, error) {
+func NewCrawler(targetUrl *site.Url) (*Crawler, error) {
 	crawSite, err := site.NewSite(targetUrl)
 	if err != nil {
 		return nil, err

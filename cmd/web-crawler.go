@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/andskur/web-crawler/application"
+	"github.com/andskur/web-crawler/config"
 )
 
 // usage constant provide help message
@@ -30,7 +31,12 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	app, err := application.NewApplication(target, *fn, *mt, *of)
+	cfg, err := config.NewConfig(target, *fn, *mt, *of)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	app, err := application.NewApplication(cfg)
 	if err != nil {
 		logrus.Fatal(err)
 	}

@@ -9,7 +9,7 @@
 - [x] CLI interface for interaction
 - [x] Two variant of sitemap (Tree, HashMap)
 - [x] Options for different output formats (XML, JSON, STDOUT)
-- [ ] Verbos Cli option turn on detailed logging
+- [ ] Verbose Cli option turn on detailed logging
 - [ ] Cosmetic cli prompt improvements
 - [ ] Errors handling in GoRoutines
 - [ ] README file

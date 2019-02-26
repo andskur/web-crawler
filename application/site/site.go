@@ -5,8 +5,6 @@ import (
 	"errors"
 	"strings"
 	"sync"
-
-	"github.com/andskur/web-crawler/utils"
 )
 
 // Site pages validation errors
@@ -30,11 +28,11 @@ type Site struct {
 }
 
 // NewSite create new site from given target Url
-func NewSite(targetUrl string) (*Site, error) {
-	entryPage, err := ParseRequestURI(targetUrl)
+func NewSite(entryPage *Url) (*Site, error) {
+	/*entryPage, err := ParseRequestURI(targetUrl)
 	if err != nil {
 		return nil, err
-	}
+	}*/
 	site := &Site{
 		Url: entryPage,
 		PageTree: &Page{
@@ -74,7 +72,7 @@ func (s *Site) AddPageToParent(link string, parent *Page) (*Page, error) {
 func (s *Site) AddPageToSite(page Page) error {
 	// check if page already in main hash map
 	s.Mu.Lock()
-	ok := utils.InMap(page.Url.String(), s.HashMap)
+	ok := inMap(page.Url.String(), s.HashMap)
 	s.Mu.Unlock()
 	if ok {
 		return errAlreadyParsed
@@ -117,7 +115,7 @@ func (s Site) validatePage(link string, parent *Page) (*Url, error) {
 
 	// check if link already have in parent slice
 	s.Mu.Lock()
-	contain := utils.InSlice(uri.String(), s.HashMap[parent.Url.String()])
+	contain := inSlice(uri.String(), s.HashMap[parent.Url.String()])
 	s.Mu.Unlock()
 	if contain {
 		return nil, errAlreadyInParent
@@ -131,4 +129,27 @@ func (s Site) isLinkInHost(link string) error {
 		return nil
 	}
 	return errExternalLink
+}
+
+// inSlice checks if slice contain given string
+func inSlice(s string, slice []string) bool {
+	for _, v := range slice {
+		if s == v || v+"/" == s {
+			return true
+		}
+	}
+	return false
+}
+
+// TODO need refactoring
+
+// inMap check if map contain given link
+func inMap(s string, m map[string][]string) bool {
+	_, ok := m[s]
+	_, okSlash := m[s+"/"]
+	_, okOneMore := m[strings.TrimSuffix(s, "/")]
+	if okSlash || ok || okOneMore {
+		return true
+	}
+	return false
 }

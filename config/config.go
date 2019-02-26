@@ -3,26 +3,63 @@ package config
 import (
 	"fmt"
 
+	"github.com/andskur/web-crawler/application/site"
 	"github.com/andskur/web-crawler/application/writer"
 )
 
 // Config represent Crawler Application config
 type Config struct {
-	Filename     string
-	MapType      string
-	OutputFormat writer.Format
+	Target   *site.Url
+	Filename string
+	MapType  string
+	Output   writer.Format
 }
 
 // NewConfig create new config instance from given parameters
-func NewConfig(mapType, outputFormat string) (*Config, error) {
-	format, err := writer.ParseFormats(outputFormat)
-	if err != nil {
+func NewConfig(target, fileName, mapType, outputFormat string) (*Config, error) {
+	cfg := &Config{MapType: mapType}
+
+	// set target url
+	if err := cfg.setTarget(target); err != nil {
 		return nil, err
 	}
-	return &Config{MapType: mapType, OutputFormat: format}, nil
+
+	// set output format
+	if err := cfg.setOutput(outputFormat); err != nil {
+		return nil, err
+	}
+
+	// set file name
+	cfg.setFileName(fileName)
+
+	return cfg, nil
+}
+
+// setOutput create target Web Site Url from string
+// and set it to current Config instance
+func (c *Config) setTarget(target string) (err error) {
+	c.Target, err = site.ParseRequestURI(target)
+	return
+}
+
+// setTarget parse output format from given string
+// and set it to current Config instance
+func (c *Config) setOutput(output string) (err error) {
+	c.Output, err = writer.ParseFormats(output)
+	return
+}
+
+// setTarget set filename to current Config instance
+func (c *Config) setFileName(fileName string) {
+	switch fileName {
+	case "":
+		c.formatFilename(c.Target.Host)
+	default:
+		c.formatFilename(fileName)
+	}
 }
 
 // formatFilename format filename to correct value
-func (c *Config) FormatFilename(name string) {
-	c.Filename = fmt.Sprintf("%s.%s", name, c.OutputFormat)
+func (c *Config) formatFilename(name string) {
+	c.Filename = fmt.Sprintf("%s.%s", name, c.Output)
 }
