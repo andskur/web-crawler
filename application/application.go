@@ -19,7 +19,6 @@ type Application struct {
 	*config.Config
 	*crawler.Crawler
 	Writer writer.IWriter
-	Output interface{}
 }
 
 // NewApplication create new Web Crawler Application instance with
@@ -65,19 +64,6 @@ func (a *Application) setFilename(fileName string) {
 	default:
 		a.FormatFilename(fileName)
 	}
-}
-
-// setOutput set valid application output type
-func (a *Application) setOutput() error {
-	switch a.MapType {
-	case "hash":
-		a.Output = a.Site.HashMap
-	case "tree":
-		a.Output = a.Site.PageTree
-	default:
-		return errInvalidMapType
-	}
-	return nil
 }
 
 // initWriter initialize application Crawler instance
