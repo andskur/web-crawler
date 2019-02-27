@@ -15,9 +15,9 @@ var errInvalidMapType = errors.New("Invalid sitemap type\nSupported types:\n\t h
 
 // Application represent Crawler Application structure
 type Application struct {
-	*config.Config
-	*crawler.Crawler
-	Writer writer.IWriter
+	*config.Config                  // configuration params
+	*crawler.Crawler                // web crawler instance
+	Writer           writer.IWriter // output writer instance
 }
 
 // NewApplication create new Web Crawler Application instance with
@@ -44,24 +44,34 @@ func (a *Application) initApp() error {
 	}
 
 	// init Logger
-	logrus.SetFormatter(&logrus.TextFormatter{
-		// DisableColors: true,
-		FullTimestamp: true,
-	})
+	a.initLogger()
 
 	return nil
 }
 
-// initWriter initialize application Crawler instance
+// initWriter initialize Application Crawler instance
 func (a *Application) initCrawler(target *site.Url) (err error) {
-	a.Crawler, err = crawler.NewCrawler(target)
+	a.Crawler, err = crawler.NewCrawler(target, a.Config.Verbose)
 	return
 }
 
-// initWriter initialize application Output Writer instance
+// initWriter initialize Application Output Writer instance
 func (a *Application) initWriter() (err error) {
 	a.Writer, err = writer.NewWriter(a.Output)
 	return
+}
+
+// initLogger initialize Application logger formatter
+func (a *Application) initLogger() {
+	formatter := &logrus.TextFormatter{}
+	switch {
+	case a.Config.Verbose:
+		formatter.FullTimestamp = true
+	default:
+		formatter.FullTimestamp = false
+		formatter.DisableColors = true
+	}
+	logrus.SetFormatter(formatter)
 }
 
 // WriteOutput write Application output to file

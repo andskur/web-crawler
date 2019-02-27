@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"net/url"
-
-	"github.com/sirupsen/logrus"
 )
 
 // Url represent Urls structure
@@ -31,7 +29,6 @@ func (u *Url) ParseUrl(ref string) (*Url, error) {
 // The string rawUrl is assumed not to have a #fragment suffix.
 // (Web browsers strip #fragment before sending the URL to a web server.)
 func ParseRequestURI(rawUrl string) (*Url, error) {
-	logrus.Info(rawUrl)
 	uri, err := url.ParseRequestURI(rawUrl)
 	if err != nil {
 		return nil, err

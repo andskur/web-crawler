@@ -13,7 +13,7 @@ var (
 	errParsedLink      = errors.New("cannot parsing link")
 	errExternalLink    = errors.New("link is external")
 	errAlreadyInParent = errors.New("link already in parent slice")
-	errAlreadyParsed   = errors.New("link have already parsed")
+	errAlreadyParsed   = errors.New("page have already parsed")
 	errEmailProtected  = errors.New("link is email-protected")
 )
 
@@ -28,20 +28,14 @@ type Site struct {
 }
 
 // NewSite create new site from given target Url
-func NewSite(entryPage *Url) (*Site, error) {
-	/*entryPage, err := ParseRequestURI(targetUrl)
-	if err != nil {
-		return nil, err
-	}*/
+func NewSite(entryPage *Url) *Site {
 	site := &Site{
-		Url: entryPage,
-		PageTree: &Page{
-			Url: entryPage,
-		},
-		HashMap: make(map[string][]string),
-		Mu:      &sync.RWMutex{},
+		Url:      entryPage,
+		PageTree: NewPage(entryPage),
+		HashMap:  make(map[string][]string),
+		Mu:       &sync.RWMutex{},
 	}
-	return site, nil
+	return site
 }
 
 // AddPageToParent validate page and add it to given parent
@@ -55,7 +49,7 @@ func (s *Site) AddPageToParent(link string, parent *Page) (*Page, error) {
 	parent.TotalLinks++
 
 	// create new page
-	page := &Page{Url: uri}
+	page := NewPage(uri)
 
 	// add child page to parent links slice
 	s.Mu.Lock()

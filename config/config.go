@@ -9,15 +9,19 @@ import (
 
 // Config represent Crawler Application config
 type Config struct {
-	Target   *site.Url
-	Filename string
-	MapType  string
-	Output   writer.Format
+	Target   *site.Url     // target web site page
+	Filename string        // name of file for output write
+	MapType  string        // type od sitemap, Page tree or Hash map
+	Output   writer.Format // output format, Json or Xml
+	Verbose  bool          // verbose mode
 }
 
 // NewConfig create new config instance from given parameters
-func NewConfig(target, fileName, mapType, outputFormat string) (*Config, error) {
-	cfg := &Config{MapType: mapType}
+func NewConfig(target, fileName, mapType, outputFormat string, verbose bool) (*Config, error) {
+	cfg := &Config{
+		MapType: mapType,
+		Verbose: verbose,
+	}
 
 	// set target url
 	if err := cfg.setTarget(target); err != nil {

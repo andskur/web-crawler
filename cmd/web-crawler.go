@@ -25,13 +25,14 @@ func main() {
 	fn := flagSet.String("fn", "", "-fn {filename} filename to write output")
 	mt := flagSet.String("mt", "hash", "-mt {hash || tree} sitemap type, hash map or page tree (default \"hash\")")
 	of := flagSet.String("of", "json", "-of {json || xml} output format, json or xml (default \"json\")")
+	v := flagSet.Bool("v", false, "-v verbose mode")
 
 	err := flagSet.Parse(os.Args[2:])
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	cfg, err := config.NewConfig(target, *fn, *mt, *of)
+	cfg, err := config.NewConfig(target, *fn, *mt, *of, *v)
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -42,9 +43,6 @@ func main() {
 	}
 
 	app.StartCrawling()
-
-	logrus.Info(app.Site.TotalPages)
-	logrus.Info(app.Duration)
 
 	if err := app.WriteOutput(); err != nil {
 		logrus.Fatal(err)
