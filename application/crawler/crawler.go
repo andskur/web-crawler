@@ -65,9 +65,6 @@ func (c *Crawler) StartCrawling() {
 func (c *Crawler) CrawlPage(page *site.Page) error {
 	defer c.wg.Done()
 
-	// increase total site pages count
-	c.Site.TotalPages++
-
 	if c.Verbose {
 		page.Logger.Info("Start page crawling...")
 	}
@@ -93,9 +90,11 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 		c.Site.Mu.Lock()
 		delete(c.Site.HashMap, page.Url.String())
 		c.Site.Mu.Unlock()
-		c.Site.TotalPages--
 		return fmt.Errorf("unsupported page format - %s", contentType)
 	}
+
+	// increase total site pages count
+	c.Site.TotalPages++
 
 	// parse html body
 	tokens := html.NewTokenizer(resp.Body)
@@ -127,7 +126,7 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 						c.Site.Mu.Unlock()
 
 						// validate and add page to site
-						if err := c.Site.AddPageToSite(*childPage); err != nil {
+						if err := c.Site.AddPageToSite(childPage); err != nil {
 							// TODO temporarily disabling, need to implement logging levels
 							/*if c.Verbose {
 								childPage.Logger.Error(err)

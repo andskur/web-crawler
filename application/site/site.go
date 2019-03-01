@@ -30,7 +30,7 @@ func NewSite(entryPage *Url) *Site {
 }
 
 // AddPageToSite add given page to current site
-func (s *Site) AddPageToSite(page Page) error {
+func (s *Site) AddPageToSite(page *Page) error {
 	// check if page already in main hash map
 	s.Mu.Lock()
 	ok := inMap(page.Url.String(), s.HashMap)
