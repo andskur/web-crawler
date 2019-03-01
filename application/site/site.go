@@ -7,15 +7,7 @@ import (
 	"sync"
 )
 
-// Site pages validation errors
-var (
-	errQueryLink       = errors.New("link with query params")
-	errParsedLink      = errors.New("cannot parsing link")
-	errExternalLink    = errors.New("link is external")
-	errAlreadyInParent = errors.New("link already in parent slice")
-	errAlreadyParsed   = errors.New("page have already parsed")
-	errEmailProtected  = errors.New("link is email-protected")
-)
+var errAlreadyParsed = errors.New("page have already parsed")
 
 // Site represent Web-site structure
 type Site struct {

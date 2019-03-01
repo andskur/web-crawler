@@ -1,9 +1,20 @@
 package site
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/sirupsen/logrus"
+)
+
+// Pages validation errors
+var (
+	errQueryLink       = errors.New("link with query params")
+	errParsedLink      = errors.New("cannot parsing link")
+	errExternalLink    = errors.New("link is external")
+	errAlreadyInParent = errors.New("link already in parent slice")
+	errEmailProtected  = errors.New("link is email-protected")
+	errInvalidScheme   = errors.New("different Url Scheme from parent")
 )
 
 // Page represent web-site page structure with own URL
@@ -67,7 +78,7 @@ func (p Page) validateUrl(url *Url) error {
 
 	// remove duplicate http & https
 	if url.Scheme != p.Url.Scheme {
-		return errAlreadyParsed
+		return errInvalidScheme
 	}
 
 	// check if parent page already have this sub page
