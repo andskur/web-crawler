@@ -10,10 +10,10 @@
 - [x] Two variant of sitemap (Tree, HashMap)
 - [x] Options for different output formats (XML, JSON, STDOUT)
 - [x] Verbose Cli option turn on detailed logging
-- [ ] Cosmetic cli prompt improvements
+- [ ] Cosmetic cli prompt improvements (progress bar)
 - [x] Errors handling in GoRoutines
-- [ ] README file
-- [ ] Unit testing
+- [x] README file
+- [x] Unit testing
 - [ ] Benchmarks
 
 Indexing pdf page?
