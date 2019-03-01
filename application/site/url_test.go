@@ -8,13 +8,7 @@ import (
 )
 
 func TestUrl_ParseUrl(t *testing.T) {
-
-	validUrl, err := url.Parse("https://monzo.com")
-	if err != nil {
-		return
-	}
-
-	validSubUrl, err := validUrl.Parse("/blog/monzo")
+	validSubUrl, err := getValidUrl().Parse("/blog/monzo")
 	if err != nil {
 		return
 	}
@@ -32,8 +26,8 @@ func TestUrl_ParseUrl(t *testing.T) {
 		want    *Url
 		wantErr bool
 	}{
-		{"validUrl", fields{nil}, args{"https://monzo.com"}, &Url{validUrl}, false},
-		{"validSubUrl", fields{validUrl}, args{"/blog/monzo"}, &Url{validSubUrl}, false},
+		{"validUrl", fields{nil}, args{"https://monzo.com"}, &Url{getValidUrl()}, false},
+		{"validSubUrl", fields{getValidUrl()}, args{"/blog/monzo"}, &Url{validSubUrl}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -54,12 +48,6 @@ func TestUrl_ParseUrl(t *testing.T) {
 }
 
 func TestParseRequestURI(t *testing.T) {
-
-	validUrl, err := url.Parse("https://monzo.com")
-	if err != nil {
-		return
-	}
-
 	type args struct {
 		rawUrl string
 	}
@@ -69,7 +57,7 @@ func TestParseRequestURI(t *testing.T) {
 		want    *Url
 		wantErr bool
 	}{
-		{"validUrl", args{"https://monzo.com"}, &Url{validUrl}, false},
+		{"validUrl", args{"https://monzo.com"}, &Url{getValidUrl()}, false},
 		{"invalidUrl", args{"blog/test"}, nil, true},
 	}
 	for _, tt := range tests {
@@ -84,4 +72,9 @@ func TestParseRequestURI(t *testing.T) {
 			}
 		})
 	}
+}
+
+func getValidUrl() (validUrl *url.URL) {
+	validUrl, _ = url.Parse("https://monzo.com")
+	return
 }
