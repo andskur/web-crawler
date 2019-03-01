@@ -38,8 +38,8 @@ func TestSite_AddPageToSite(t *testing.T) {
 	validUrl, _ := ParseRequestURI("https://monzo.com/news")
 	validPage := NewPage(validUrl)
 
-	existdUrl, _ := ParseRequestURI("https://monzo.com/news")
-	existPage := NewPage(existdUrl)
+	existUrl, _ := ParseRequestURI("https://monzo.com/news")
+	existPage := NewPage(existUrl)
 
 	type args struct {
 		page *Page
