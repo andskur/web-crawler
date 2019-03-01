@@ -112,7 +112,7 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 					// and only "href" attribute and remove anchor
 					if link := removeAnchor(attr.Val); attr.Key == "href" {
 						// validate and add child page to parent page
-						childPage, err := c.Site.AddPageToParent(link, page)
+						childPage, err := page.AddSubPage(link)
 						if err != nil {
 							// TODO temporarily disabling, need to implement logging levels
 							/*if c.Verbose {
@@ -120,6 +120,11 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 							}*/
 							continue
 						}
+
+						// add child page to parent links slice
+						c.Site.Mu.Lock()
+						c.Site.HashMap[page.Url.String()] = append(c.Site.HashMap[page.Url.String()], childPage.Url.String())
+						c.Site.Mu.Unlock()
 
 						// validate and add page to site
 						if err := c.Site.AddPageToSite(*childPage); err != nil {
