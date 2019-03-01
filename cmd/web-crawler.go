@@ -74,4 +74,5 @@ func main() {
 	if err := app.WriteOutput(); err != nil {
 		logrus.Fatal(err)
 	}
+
 }

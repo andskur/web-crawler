@@ -2,6 +2,8 @@ package application
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
@@ -82,6 +84,9 @@ func (a *Application) WriteOutput() error {
 	if err := a.Writer.WriteTo(a.Site, a.Filename); err != nil {
 		return err
 	}
+
+	fmt.Printf("%s sitemap written to %s\n", strings.Title(a.MapType), a.Filename)
+
 	return nil
 }
 

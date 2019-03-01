@@ -3,6 +3,7 @@ package crawler
 import (
 	"fmt"
 	"net/http"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -15,17 +16,19 @@ import (
 
 // Crawler represent web-crawler structure
 type Crawler struct {
-	Site     *site.Site     // web site for crawling
-	Duration time.Duration  // total crawling duration
-	Verbose  bool           // verbose mode
-	wg       sync.WaitGroup // crawler waitgroup
+	Site        *site.Site     // web site for crawling
+	Duration    time.Duration  // total crawling duration
+	Verbose     bool           // verbose mode
+	wg          sync.WaitGroup // crawler waitgroup
+	threadLimit chan int       // thread-blocking channel
 }
 
 // NewCrawler creates new Crawler structure instance
 func NewCrawler(targetUrl *site.Url, verbose bool) (*Crawler, error) {
 	crawler := &Crawler{
-		Site:    site.NewSite(targetUrl),
-		Verbose: verbose,
+		Site:        site.NewSite(targetUrl),
+		Verbose:     verbose,
+		threadLimit: initCapacity(runtime.NumCPU()),
 	}
 	return crawler, nil
 }
@@ -42,11 +45,11 @@ func (c *Crawler) StartCrawling() {
 
 	// start crawling site pages
 	c.wg.Add(1)
-	go func() {
-		if err := c.CrawlPage(c.Site.PageTree); err != nil && c.Verbose {
-			logrus.Error(err)
-		}
-	}()
+	// go func() {
+	if err := c.CrawlPage(c.Site.PageTree); err != nil && c.Verbose {
+		logrus.Error(err)
+	}
+	// }()
 
 	// create "done: channel
 	done := make(chan struct{})
@@ -104,44 +107,54 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 		switch tokens.Next() {
 		case html.ErrorToken:
 			return nil
-		case html.StartTagToken, html.EndTagToken:
+		case html.StartTagToken:
 			// we need only <a> html tag
 			if token := tokens.Token(); token.Data == "a" {
-				for _, attr := range token.Attr {
-					// and only "href" attribute and remove anchor
-					if link := removeAnchor(attr.Val); attr.Key == "href" {
-						// validate and add child page to parent page
-						childPage, err := page.AddSubPage(link)
-						if err != nil {
-							// TODO temporarily disabling, need to implement logging levels
-							/*if c.Verbose {
-								page.Logger.WithField("link", link).Error(err)
-							}*/
-							continue
+				// get link from href attribute
+				link, ok := getLink(token)
+				if !ok {
+					continue
+				}
+				// validate and add child page to parent page
+				childPage, err := page.AddSubPage(link)
+				if err != nil {
+					// TODO temporarily disabling, need to implement logging levels
+					/*if c.Verbose {
+						page.Logger.WithField("link", link).Error(err)
+					}*/
+					continue
+				}
+
+				// add child page to parent links slice
+				c.Site.Mu.Lock()
+				c.Site.HashMap[page.Url.String()] = append(c.Site.HashMap[page.Url.String()], childPage.Url.String())
+				c.Site.Mu.Unlock()
+
+				// validate and add page to site
+				if err := c.Site.AddPageToSite(childPage); err != nil {
+					// TODO temporarily disabling, need to implement logging levels
+					/*if c.Verbose {
+						childPage.Logger.Error(err)
+					}*/
+					continue
+				}
+
+			CrawlChild:
+				select {
+				case <-c.threadLimit:
+					// start crawl child page
+					c.wg.Add(1)
+					go func() {
+						if err := c.CrawlPage(childPage); err != nil && c.Verbose {
+							childPage.Logger.Error(err)
 						}
-
-						// add child page to parent links slice
-						c.Site.Mu.Lock()
-						c.Site.HashMap[page.Url.String()] = append(c.Site.HashMap[page.Url.String()], childPage.Url.String())
-						c.Site.Mu.Unlock()
-
-						// validate and add page to site
-						if err := c.Site.AddPageToSite(childPage); err != nil {
-							// TODO temporarily disabling, need to implement logging levels
-							/*if c.Verbose {
-								childPage.Logger.Error(err)
-							}*/
-							continue
-						}
-
-						// start crawl child page
-						c.wg.Add(1)
-						go func() {
-							if err := c.CrawlPage(childPage); err != nil && c.Verbose {
-								childPage.Logger.Error(err)
-							}
-						}()
+					}()
+					c.threadLimit <- 1
+				default:
+					if c.Verbose {
+						childPage.Logger.Warning("CPU limit reached... WAIT")
 					}
+					goto CrawlChild
 				}
 			}
 		}
@@ -161,6 +174,7 @@ func (c *Crawler) printTotal(done chan struct{}) {
 			goto Finish
 		default:
 			fmt.Printf("\rTotal pages: %d...", c.Site.TotalPages)
+			// fmt.Printf("\rGorutines: %d...", runtime.NumGoroutine())
 		}
 	}
 Finish:
@@ -178,4 +192,25 @@ func removeAnchor(s string) string {
 		return s[:idx]
 	}
 	return s
+}
+
+// getLink get href Link from attribute of given html tag
+func getLink(token html.Token) (link string, ok bool) {
+	for _, attr := range token.Attr {
+		// finds"href" attribute and remove anchor
+		if attr.Key == "href" {
+			link = removeAnchor(attr.Val)
+			ok = true
+		}
+	}
+	return
+}
+
+// fills up a channel of integers to capacity
+func initCapacity(maxOutstanding int) (sem chan int) {
+	sem = make(chan int, maxOutstanding)
+	for i := 0; i < maxOutstanding; i++ {
+		sem <- 1
+	}
+	return
 }

@@ -11,12 +11,12 @@ var errAlreadyParsed = errors.New("page have already parsed")
 
 // Site represent Web-site structure
 type Site struct {
-	XMLName    xml.Name      `json:"-" xml:"site"`
-	Url        *Url          `json:"url" xml:"url"`                       // basic site Url
-	TotalPages int           `json:"total_pages" xml:"total_pages"`       // total counts site page
-	PageTree   *Page         `json:"tree,omitempty" xml:"tree,omitempty"` // site page tree
-	HashMap    PagesHashMap  `json:"map,omitempty" xml:"map,omitempty"`   // site hash page map
-	Mu         *sync.RWMutex `json:"-" xml:"-"`                           // global Read/Write mutex variable for threadsafe operations with maps
+	XMLName    xml.Name     `json:"-" xml:"site"`
+	Url        *Url         `json:"url" xml:"url"`                       // basic site Url
+	TotalPages int          `json:"total_pages" xml:"total_pages"`       // total counts site page
+	PageTree   *Page        `json:"tree,omitempty" xml:"tree,omitempty"` // site page tree
+	HashMap    PagesHashMap `json:"map,omitempty" xml:"map,omitempty"`   // site hash page map
+	Mu         *sync.Mutex  `json:"-" xml:"-"`                           // mutex variable for threadsafe operations with maps
 }
 
 // NewSite create new site from given target Url
@@ -25,7 +25,7 @@ func NewSite(entryPage *Url) *Site {
 		Url:      entryPage,
 		PageTree: NewPage(entryPage),
 		HashMap:  make(map[string][]string),
-		Mu:       &sync.RWMutex{},
+		Mu:       &sync.Mutex{},
 	}
 }
 
