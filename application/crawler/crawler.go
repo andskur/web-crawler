@@ -27,7 +27,6 @@ func NewCrawler(targetUrl *site.Url, verbose bool) (*Crawler, error) {
 		Site:    site.NewSite(targetUrl),
 		Verbose: verbose,
 	}
-
 	return crawler, nil
 }
 
@@ -49,6 +48,7 @@ func (c *Crawler) StartCrawling() {
 		}
 	}()
 
+	// create "done: channel
 	done := make(chan struct{})
 
 	// if verbose disabled - print total pages count concurrency
