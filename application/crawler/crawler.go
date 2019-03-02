@@ -179,7 +179,6 @@ func (c *Crawler) printTotal(done chan struct{}) {
 			goto Finish
 		default:
 			fmt.Printf("\rTotal pages: %d...", c.Site.TotalPages)
-			// fmt.Printf("\rGorutines: %d...", runtime.NumGoroutine())
 		}
 	}
 Finish:
