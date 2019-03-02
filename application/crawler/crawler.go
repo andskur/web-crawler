@@ -109,54 +109,59 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 			return nil
 		case html.StartTagToken:
 			// we need only <a> html tag
-			if token := tokens.Token(); token.Data == "a" {
-				// get link from href attribute
-				link, ok := getLink(token)
-				if !ok {
-					continue
-				}
-				// validate and add child page to parent page
-				childPage, err := page.AddSubPage(link)
-				if err != nil {
-					// TODO temporarily disabling, need to implement logging levels
-					/*if c.Verbose {
-						page.Logger.WithField("link", link).Error(err)
-					}*/
-					continue
-				}
-
-				// add child page to parent links slice
-				c.Site.Mu.Lock()
-				c.Site.HashMap[page.Url.String()] = append(c.Site.HashMap[page.Url.String()], childPage.Url.String())
-				c.Site.Mu.Unlock()
-
-				// validate and add page to site
-				if err := c.Site.AddPageToSite(childPage); err != nil {
-					// TODO temporarily disabling, need to implement logging levels
-					/*if c.Verbose {
-						childPage.Logger.Error(err)
-					}*/
-					continue
-				}
-
-			CrawlChild:
-				select {
-				case <-c.threadLimit:
-					// start crawl child page
-					c.wg.Add(1)
-					go func() {
-						if err := c.CrawlPage(childPage); err != nil && c.Verbose {
-							childPage.Logger.Error(err)
-						}
-					}()
-					c.threadLimit <- 1
-				default:
-					if c.Verbose {
-						childPage.Logger.Warning("CPU limit reached... WAIT")
-					}
-					goto CrawlChild
-				}
+			token := tokens.Token()
+			if token.Data != "a" {
+				continue
 			}
+
+			// get link from href attribute
+			link, ok := getLink(token)
+			if !ok {
+				continue
+			}
+
+			// validate and add child page to parent page
+			childPage, err := page.AddSubPage(link)
+			if err != nil {
+				// TODO need to implement logging levels
+				if c.Verbose {
+					page.Logger.WithField("link", link).Error(err)
+				}
+				continue
+			}
+
+			// add child page to parent links slice
+			c.Site.Mu.Lock()
+			c.Site.HashMap[page.Url.String()] = append(c.Site.HashMap[page.Url.String()], childPage.Url.String())
+			c.Site.Mu.Unlock()
+
+			// validate and add page to site
+			if err := c.Site.AddPageToSite(childPage); err != nil {
+				// TODO need to implement logging levels
+				if c.Verbose {
+					childPage.Logger.Error(err)
+				}
+				continue
+			}
+
+		CrawlChild:
+			select {
+			case <-c.threadLimit:
+				// start crawl child page
+				c.wg.Add(1)
+				go func() {
+					if err := c.CrawlPage(childPage); err != nil && c.Verbose {
+						childPage.Logger.Error(err)
+					}
+				}()
+				c.threadLimit <- 1
+			default:
+				if c.Verbose {
+					childPage.Logger.Warning("CPU limit reached... WAIT")
+				}
+				goto CrawlChild
+			}
+			// }
 		}
 	}
 }
