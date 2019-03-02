@@ -3,7 +3,6 @@ package crawler
 import (
 	"fmt"
 	"net/http"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -15,20 +14,19 @@ import (
 
 // Crawler represent web-crawler structure
 type Crawler struct {
-	Site        *site.Site     // web site for crawling
-	Duration    time.Duration  // total crawling duration
-	Verbose     bool           // verbose mode
-	threadLimit chan int       // thread-blocking channel
-	wg          sync.WaitGroup // crawler WaitGroup
+	Site      *site.Site     // web site for crawling
+	Duration  time.Duration  // total crawling duration
+	Verbose   bool           // verbose mode
+	Semaphore chan int       // thread-blocking channel
+	wg        sync.WaitGroup // crawler WaitGroup
 }
 
 // NewCrawler creates new Crawler structure instance
 func NewCrawler(targetUrl *site.Url, verbose bool) (*Crawler, error) {
 	crawler := &Crawler{
-		Site:        site.NewSite(targetUrl),
-		Verbose:     verbose,
-		threadLimit: initCapacity(runtime.NumCPU()),
-		// threadLimit: initCapacity(1),
+		Site:      site.NewSite(targetUrl),
+		Verbose:   verbose,
+		Semaphore: initCapacity(100000),
 	}
 	return crawler, nil
 }
@@ -45,6 +43,7 @@ func (c *Crawler) StartCrawling() error {
 
 	// start crawling site pages
 	c.wg.Add(1)
+	<-c.Semaphore
 	if err := c.CrawlPage(c.Site.PageTree); err != nil && c.Verbose {
 		return err
 	}
@@ -90,6 +89,7 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 	if contentType := resp.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "text/html") {
 		// if page is not text/html - delete it from site Hash Map
 		c.Site.DeletePageFromSite(page.Url.String())
+		c.Semaphore <- 1
 		return fmt.Errorf("unsupported page format - %s", contentType)
 	}
 
@@ -98,6 +98,8 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 
 	// parse html body
 	tokens := html.NewTokenizer(resp.Body)
+
+	c.Semaphore <- 1
 
 	// find valid html tags
 	for {
@@ -142,7 +144,7 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 		CrawlChild:
 			// check if Crawler have available threads
 			select {
-			case <-c.threadLimit:
+			case <-c.Semaphore:
 				// start crawl child page if we have
 				c.wg.Add(1)
 				go func() {
@@ -150,13 +152,12 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 						childPage.Logger.Error(err)
 					}
 				}()
-				c.threadLimit <- 1
 			default:
 				// print warning and try again after one second
 				if c.Verbose {
 					childPage.Logger.Warning("Threads limit reached... WAIT")
 				}
-				time.Sleep(1 * time.Second)
+				time.Sleep(10 * time.Millisecond)
 				goto CrawlChild
 			}
 		}

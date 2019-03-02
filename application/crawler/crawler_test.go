@@ -21,9 +21,9 @@ func TestNewCrawler(t *testing.T) {
 	}{
 		{"validCralwer", args{getTestSite().Url, false},
 			&Crawler{
-				Site:        getTestSite(),
-				Verbose:     false,
-				threadLimit: initCapacity(runtime.NumCPU())},
+				Site:      getTestSite(),
+				Verbose:   false,
+				Semaphore: initCapacity(runtime.NumCPU())},
 			false},
 	}
 	for _, tt := range tests {
