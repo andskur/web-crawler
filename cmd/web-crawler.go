@@ -57,10 +57,13 @@ func main() {
 	}
 
 	// create new Application Config from cli argument and params
-	cfg, err := config.NewConfig(target, *fn, *mt, *of, *v, *p)
+	cfg, err := config.NewConfig(target, *fn, *mt, *of, *v)
 	if err != nil {
 		logrus.Fatal(err)
 	}
+
+	// set Semaphore channel
+	cfg.SetSemaphore(*p)
 
 	// create new Application with Config
 	app, err := application.NewApplication(cfg)

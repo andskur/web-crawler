@@ -10,7 +10,7 @@ import (
 )
 
 /*var testConfig = Config{
-	Target: getValidUrl(),
+	Target: getValidURL(),
 	Filename: "sitemap",
 	MapType ""
 }*/
@@ -39,7 +39,7 @@ func TestNewConfig(t *testing.T) {
 				verbose:      false,
 			},
 			want: &Config{
-				Target:   getValidUrl(),
+				Target:   getValidURL(),
 				Filename: "monzo.com.json",
 				MapType:  "hash",
 				Output:   writer.JSON,
@@ -57,7 +57,7 @@ func TestNewConfig(t *testing.T) {
 				verbose:      false,
 			},
 			want: &Config{
-				Target:   getValidUrl(),
+				Target:   getValidURL(),
 				Filename: "monzo.com.xml",
 				MapType:  "hash",
 				Output:   writer.XML,
@@ -75,7 +75,7 @@ func TestNewConfig(t *testing.T) {
 				verbose:      false,
 			},
 			want: &Config{
-				Target:   getValidUrl(),
+				Target:   getValidURL(),
 				Filename: "monzo.com.xml",
 				MapType:  "tree",
 				Output:   writer.XML,
@@ -93,7 +93,7 @@ func TestNewConfig(t *testing.T) {
 				verbose:      false,
 			},
 			want: &Config{
-				Target:   getValidUrl(),
+				Target:   getValidURL(),
 				Filename: "monzo.com.json",
 				MapType:  "tree",
 				Output:   writer.JSON,
@@ -111,7 +111,7 @@ func TestNewConfig(t *testing.T) {
 				verbose:      true,
 			},
 			want: &Config{
-				Target:   getValidUrl(),
+				Target:   getValidURL(),
 				Filename: "monzo.com.xml",
 				MapType:  "tree",
 				Output:   writer.XML,
@@ -129,7 +129,7 @@ func TestNewConfig(t *testing.T) {
 				verbose:      false,
 			},
 			want: &Config{
-				Target:   getValidUrl(),
+				Target:   getValidURL(),
 				Filename: "sitemap.json",
 				MapType:  "hash",
 				Output:   writer.JSON,
@@ -164,7 +164,7 @@ func TestNewConfig(t *testing.T) {
 	}
 }
 
-func getValidUrl() (validUrl *site.Url) {
-	validUrl, _ = site.ParseRequestURI("https://monzo.com")
+func getValidURL() (validURL *site.Url) {
+	validURL, _ = site.ParseRequestURI("https://monzo.com")
 	return
 }

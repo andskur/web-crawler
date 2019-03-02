@@ -41,9 +41,11 @@ func (c *Crawler) StartCrawling() error {
 
 	fmt.Printf("Start crawling web site %s...\n", c.Site.Url.Host)
 
-	// start crawling site pages
+	// add first waitgroup delta
 	c.wg.Add(1)
+	// took first semaphore slot
 	<-c.Semaphore
+	// start crawling site pages
 	if err := c.CrawlPage(c.Site.PageTree); err != nil && c.Verbose {
 		return err
 	}
@@ -64,6 +66,7 @@ func (c *Crawler) StartCrawling() error {
 
 // CrawlPage crawl given site page
 func (c *Crawler) CrawlPage(page *site.Page) error {
+	// defer page waitgroup counter
 	defer c.wg.Done()
 
 	if c.Verbose {
@@ -73,6 +76,7 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 	// http request too new crawling page
 	resp, err := http.Get(page.Url.String())
 	if err != nil {
+		c.Semaphore <- 1
 		return err
 	}
 	defer func() {
@@ -84,12 +88,14 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 		}
 	}()
 
+	// free semaphore slot
+	c.Semaphore <- 1
+
 	// TODO need to find better way for check page format
 	// check response format, need only tex/html for next crawling
 	if contentType := resp.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "text/html") {
 		// if page is not text/html - delete it from site Hash Map
 		c.Site.DeletePageFromSite(page.Url.String())
-		c.Semaphore <- 1
 		return fmt.Errorf("unsupported page format - %s", contentType)
 	}
 
@@ -98,8 +104,6 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 
 	// parse html body
 	tokens := html.NewTokenizer(resp.Body)
-
-	c.Semaphore <- 1
 
 	// find valid html tags
 	for {

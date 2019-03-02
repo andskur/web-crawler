@@ -12,14 +12,14 @@ import (
 type Config struct {
 	Target    *site.Url     // target web site page
 	Filename  string        // name of file for output write
-	MapType   string        // type od sitemap, Page tree or Hash map
+	MapType   string        // type of sitemap, Page tree or Hash map
 	Output    writer.Format // output format, Json or Xml
 	Semaphore chan int      // semaphore for Parallelization restriction
 	Verbose   bool          // verbose mode
 }
 
 // NewConfig create new config instance from given parameters
-func NewConfig(target, fileName, mapType, outputFormat string, verbose, parallelizm bool) (*Config, error) {
+func NewConfig(target, fileName, mapType, outputFormat string, verbose bool) (*Config, error) {
 	cfg := &Config{
 		MapType: mapType,
 		Verbose: verbose,
@@ -37,9 +37,6 @@ func NewConfig(target, fileName, mapType, outputFormat string, verbose, parallel
 
 	// set file name
 	cfg.setFileName(fileName)
-
-	// set Semaphore channel
-	cfg.setSemaphore(parallelizm)
 
 	return cfg, nil
 }
@@ -68,8 +65,8 @@ func (c *Config) setFileName(fileName string) {
 	}
 }
 
-// setTarget set filename to current Config instance
-func (c *Config) setSemaphore(parralelizm bool) {
+// SetSemaphore set filename to current Config instance
+func (c *Config) SetSemaphore(parralelizm bool) {
 	switch {
 	case parralelizm:
 		c.Semaphore = initCapacity(runtime.NumCPU())

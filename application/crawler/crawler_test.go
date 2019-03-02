@@ -1,46 +1,10 @@
 package crawler
 
 import (
-	"reflect"
 	"testing"
-
-	"github.com/davecgh/go-spew/spew"
 
 	"github.com/andskur/web-crawler/application/site"
 )
-
-func TestNewCrawler(t *testing.T) {
-	type args struct {
-		targetURL *site.Url
-		verbose   bool
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *Crawler
-		wantErr bool
-	}{
-		{"validCralwer", args{getTestSite().Url, false},
-			&Crawler{
-				Site:      getTestSite(),
-				Verbose:   false,
-				Semaphore: make(chan int, 10000)},
-			false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewCrawler(tt.args.targetURL, tt.args.verbose, make(chan int, 10000))
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NewCrawler(s) error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			spew.Dump(got)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewCrawler() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
 func TestCrawler_CrawlPage(t *testing.T) {
 	c, _ := NewCrawler(getTestSite().Url, false, make(chan int, 10000))
