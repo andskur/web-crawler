@@ -12,7 +12,7 @@ import (
 	"github.com/andskur/web-crawler/config"
 )
 
-var errInvalidMapType = errors.New("Invalid sitemap type\nSupported types:\n\t hash - Hash Map\n\t tree - page tree")
+var errInvalidMapType = errors.New("invalid sitemap type. Supported types:hash - Hash Map or tree - page tree")
 
 // Application represent Crawler Application structure
 type Application struct {

@@ -64,6 +64,8 @@ func (c *Crawler) StartCrawling() error {
 	return nil
 }
 
+// TODO need more decomposition
+
 // CrawlPage crawl given site page
 func (c *Crawler) CrawlPage(page *site.Page) error {
 	// defer page waitgroup counter
@@ -127,9 +129,9 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 			childPage, err := page.AddSubPage(link)
 			if err != nil {
 				// TODO need to implement logging levels
-				/*if c.Verbose {
+				if c.Verbose {
 					page.Logger.WithField("link", link).Error(err)
-				}*/
+				}
 				continue
 			}
 
@@ -139,9 +141,9 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 			// validate and add page to site
 			if err := c.Site.AddPageToSite(childPage.Url.String()); err != nil {
 				// TODO need to implement logging levels
-				/*if c.Verbose {
+				if c.Verbose {
 					childPage.Logger.Error(err)
-				}*/
+				}
 				continue
 			}
 
