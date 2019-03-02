@@ -1,7 +1,6 @@
 package site
 
 import (
-	"fmt"
 	"net/url"
 	"reflect"
 	"testing"
@@ -35,7 +34,6 @@ func TestUrl_ParseUrl(t *testing.T) {
 				URL: tt.fields.URL,
 			}
 			got, err := u.ParseUrl(tt.args.ref)
-			fmt.Println(got.String())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Url.ParseUrl() error = %v, wantErr %v", err, tt.wantErr)
 				return

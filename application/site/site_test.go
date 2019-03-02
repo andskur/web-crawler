@@ -20,7 +20,7 @@ func TestNewSite(t *testing.T) {
 			Url:      url,
 			PageTree: NewPage(url),
 			HashMap:  make(map[string][]string),
-			Mu:       &sync.RWMutex{},
+			mu:       &sync.Mutex{},
 		}},
 	}
 	for _, tt := range tests {
@@ -35,22 +35,16 @@ func TestNewSite(t *testing.T) {
 func TestSite_AddPageToSite(t *testing.T) {
 	site := getTestSite()
 
-	validUrl, _ := ParseRequestURI("https://monzo.com/news")
-	validPage := NewPage(validUrl)
-
-	existUrl, _ := ParseRequestURI("https://monzo.com/news")
-	existPage := NewPage(existUrl)
-
 	type args struct {
-		page *Page
+		page string
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
 	}{
-		{"success", args{validPage}, false},
-		{"unsuccess", args{existPage}, true},
+		{"success", args{"https://monzo.com/news"}, false},
+		{"unsuccess", args{"https://monzo.com/news"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

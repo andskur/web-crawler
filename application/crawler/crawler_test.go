@@ -2,9 +2,8 @@ package crawler
 
 import (
 	"reflect"
-	"sync"
+	"runtime"
 	"testing"
-	"time"
 
 	"github.com/andskur/web-crawler/application/site"
 )
@@ -20,7 +19,12 @@ func TestNewCrawler(t *testing.T) {
 		want    *Crawler
 		wantErr bool
 	}{
-		{"validCralwer", args{getTestSite().Url, false}, &Crawler{Site: getTestSite(), Verbose: false}, false},
+		{"validCralwer", args{getTestSite().Url, false},
+			&Crawler{
+				Site:        getTestSite(),
+				Verbose:     false,
+				threadLimit: initCapacity(runtime.NumCPU())},
+			false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -54,36 +58,6 @@ func TestCrawler_CrawlPage(t *testing.T) {
 			if err := c.CrawlPage(tt.args.page); (err != nil) != tt.wantErr {
 				t.Errorf("Crawler.CrawlPage() error = %v, wantErr %v", err, tt.wantErr)
 			}
-		})
-	}
-}
-
-func TestCrawler_calcDuration(t *testing.T) {
-	type fields struct {
-		Site     *site.Site
-		Duration time.Duration
-		Verbose  bool
-		wg       sync.WaitGroup
-	}
-	type args struct {
-		invocation time.Time
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &Crawler{
-				Site:     tt.fields.Site,
-				Duration: tt.fields.Duration,
-				Verbose:  tt.fields.Verbose,
-				wg:       tt.fields.wg,
-			}
-			c.calcDuration(tt.args.invocation)
 		})
 	}
 }
