@@ -28,6 +28,7 @@ func main() {
 	fn := flagSet.String("fn", "", "-fn {filename} filename to write output")
 	mt := flagSet.String("mt", "hash", "-mt {hash || tree} sitemap type, hash map or page tree (default \"hash\")")
 	of := flagSet.String("of", "json", "-of {json || xml} output format, json or xml (default \"json\")")
+	p := flagSet.Bool("p", false, "-p parralelizm mode")
 	v := flagSet.Bool("v", false, "-v verbose mode")
 
 	// validate arguments
@@ -56,7 +57,7 @@ func main() {
 	}
 
 	// create new Application Config from cli argument and params
-	cfg, err := config.NewConfig(target, *fn, *mt, *of, *v)
+	cfg, err := config.NewConfig(target, *fn, *mt, *of, *v, *p)
 	if err != nil {
 		logrus.Fatal(err)
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/andskur/web-crawler/application/crawler"
-	"github.com/andskur/web-crawler/application/site"
 	"github.com/andskur/web-crawler/application/writer"
 	"github.com/andskur/web-crawler/config"
 )
@@ -41,7 +40,7 @@ func (a *Application) initApp() error {
 	}
 
 	// init Crawler
-	if err := a.initCrawler(a.Target); err != nil {
+	if err := a.initCrawler(); err != nil {
 		return err
 	}
 
@@ -52,8 +51,8 @@ func (a *Application) initApp() error {
 }
 
 // initWriter initialize Application Crawler instance
-func (a *Application) initCrawler(target *site.Url) (err error) {
-	a.Crawler, err = crawler.NewCrawler(target, a.Config.Verbose)
+func (a *Application) initCrawler() (err error) {
+	a.Crawler, err = crawler.NewCrawler(a.Target, a.Config.Verbose, a.Config.Semaphore)
 	return
 }
 

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/andskur/web-crawler/application/site"
 	"github.com/andskur/web-crawler/application/writer"
@@ -9,15 +10,16 @@ import (
 
 // Config represent Crawler Application config
 type Config struct {
-	Target   *site.Url     // target web site page
-	Filename string        // name of file for output write
-	MapType  string        // type od sitemap, Page tree or Hash map
-	Output   writer.Format // output format, Json or Xml
-	Verbose  bool          // verbose mode
+	Target    *site.Url     // target web site page
+	Filename  string        // name of file for output write
+	MapType   string        // type od sitemap, Page tree or Hash map
+	Output    writer.Format // output format, Json or Xml
+	Semaphore chan int      // semaphore for Parallelization restriction
+	Verbose   bool          // verbose mode
 }
 
 // NewConfig create new config instance from given parameters
-func NewConfig(target, fileName, mapType, outputFormat string, verbose bool) (*Config, error) {
+func NewConfig(target, fileName, mapType, outputFormat string, verbose, parallelizm bool) (*Config, error) {
 	cfg := &Config{
 		MapType: mapType,
 		Verbose: verbose,
@@ -35,6 +37,9 @@ func NewConfig(target, fileName, mapType, outputFormat string, verbose bool) (*C
 
 	// set file name
 	cfg.setFileName(fileName)
+
+	// set Semaphore channel
+	cfg.setSemaphore(parallelizm)
 
 	return cfg, nil
 }
@@ -57,13 +62,32 @@ func (c *Config) setOutput(output string) (err error) {
 func (c *Config) setFileName(fileName string) {
 	switch fileName {
 	case "":
-		c.formatFilename(c.Target.Host)
+		c.Filename = formatFilename(c.Target.Host, c.Output)
 	default:
-		c.formatFilename(fileName)
+		c.Filename = formatFilename(fileName, c.Output)
+	}
+}
+
+// setTarget set filename to current Config instance
+func (c *Config) setSemaphore(parralelizm bool) {
+	switch {
+	case parralelizm:
+		c.Semaphore = initCapacity(runtime.NumCPU())
+	default:
+		c.Semaphore = initCapacity(10000)
 	}
 }
 
 // formatFilename format filename to correct value
-func (c *Config) formatFilename(name string) {
-	c.Filename = fmt.Sprintf("%s.%s", name, c.Output)
+func formatFilename(name string, extension writer.Format) string {
+	return fmt.Sprintf("%s.%s", name, extension)
+}
+
+// fills up a channel of integers to Semaphore capacity
+func initCapacity(maxOutstanding int) chan int {
+	ch := make(chan int, maxOutstanding)
+	for i := 0; i < maxOutstanding; i++ {
+		ch <- 1
+	}
+	return ch
 }

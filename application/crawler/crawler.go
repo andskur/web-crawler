@@ -16,17 +16,17 @@ import (
 type Crawler struct {
 	Site      *site.Site     // web site for crawling
 	Duration  time.Duration  // total crawling duration
+	Semaphore chan int       // thread-blocking Semaphore channel
 	Verbose   bool           // verbose mode
-	Semaphore chan int       // thread-blocking channel
 	wg        sync.WaitGroup // crawler WaitGroup
 }
 
 // NewCrawler creates new Crawler structure instance
-func NewCrawler(targetUrl *site.Url, verbose bool) (*Crawler, error) {
+func NewCrawler(targetURL *site.Url, verbose bool, semaphore chan int) (*Crawler, error) {
 	crawler := &Crawler{
-		Site:      site.NewSite(targetUrl),
+		Site:      site.NewSite(targetURL),
 		Verbose:   verbose,
-		Semaphore: initCapacity(100000),
+		Semaphore: semaphore,
 	}
 	return crawler, nil
 }
@@ -204,15 +204,6 @@ func getLink(token html.Token) (link string, ok bool) {
 			link = removeAnchor(attr.Val)
 			ok = true
 		}
-	}
-	return
-}
-
-// fills up a channel of integers to capacity
-func initCapacity(maxOutstanding int) (sem chan int) {
-	sem = make(chan int, maxOutstanding)
-	for i := 0; i < maxOutstanding; i++ {
-		sem <- 1
 	}
 	return
 }

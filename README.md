@@ -37,6 +37,7 @@ Example: ./web-crawler https://monzo.com
     	-mt {hash || tree} sitemap type, hash map or page tree (default "hash") (default "hash")
   -of string
     	-of {json || xml} output format, json or xml (default "json") (default "json")
+  -p  	-p parralelizm mode
   -v	-v verbose mode
 ```
 
