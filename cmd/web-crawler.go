@@ -68,7 +68,9 @@ func main() {
 	}
 
 	// start Crawling
-	app.StartCrawling()
+	if err := app.StartCrawling(); err != nil {
+		logrus.Fatal(err)
+	}
 
 	// format Crawler output and write it to file
 	if err := app.WriteOutput(); err != nil {

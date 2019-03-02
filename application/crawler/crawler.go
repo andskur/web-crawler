@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"golang.org/x/net/html"
 
 	"github.com/andskur/web-crawler/application/site"
@@ -19,8 +18,8 @@ type Crawler struct {
 	Site        *site.Site     // web site for crawling
 	Duration    time.Duration  // total crawling duration
 	Verbose     bool           // verbose mode
-	wg          sync.WaitGroup // crawler waitgroup
 	threadLimit chan int       // thread-blocking channel
+	wg          sync.WaitGroup // crawler WaitGroup
 }
 
 // NewCrawler creates new Crawler structure instance
@@ -29,12 +28,13 @@ func NewCrawler(targetUrl *site.Url, verbose bool) (*Crawler, error) {
 		Site:        site.NewSite(targetUrl),
 		Verbose:     verbose,
 		threadLimit: initCapacity(runtime.NumCPU()),
+		// threadLimit: initCapacity(1),
 	}
 	return crawler, nil
 }
 
 // StartCrawling starting crawling
-func (c *Crawler) StartCrawling() {
+func (c *Crawler) StartCrawling() error {
 	// print Crawler result after its execution
 	defer c.PrintResult()
 
@@ -45,11 +45,9 @@ func (c *Crawler) StartCrawling() {
 
 	// start crawling site pages
 	c.wg.Add(1)
-	// go func() {
 	if err := c.CrawlPage(c.Site.PageTree); err != nil && c.Verbose {
-		logrus.Error(err)
+		return err
 	}
-	// }()
 
 	// create "done: channel
 	done := make(chan struct{})
@@ -62,6 +60,7 @@ func (c *Crawler) StartCrawling() {
 	// waiting finish crawling of all site pages
 	c.wg.Wait()
 	close(done)
+	return nil
 }
 
 // CrawlPage crawl given site page
@@ -86,13 +85,11 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 		}
 	}()
 
-	// FIXME need to find better way for check page format
+	// TODO need to find better way for check page format
 	// check response format, need only tex/html for next crawling
 	if contentType := resp.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "text/html") {
-		// if page is not text/html - delete it from site Hash Map and decrease total site pages count
-		c.Site.Mu.Lock()
-		delete(c.Site.HashMap, page.Url.String())
-		c.Site.Mu.Unlock()
+		// if page is not text/html - delete it from site Hash Map
+		c.Site.DeletePageFromSite(page.Url.String())
 		return fmt.Errorf("unsupported page format - %s", contentType)
 	}
 
@@ -124,30 +121,29 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 			childPage, err := page.AddSubPage(link)
 			if err != nil {
 				// TODO need to implement logging levels
-				if c.Verbose {
+				/*if c.Verbose {
 					page.Logger.WithField("link", link).Error(err)
-				}
+				}*/
 				continue
 			}
 
 			// add child page to parent links slice
-			c.Site.Mu.Lock()
-			c.Site.HashMap[page.Url.String()] = append(c.Site.HashMap[page.Url.String()], childPage.Url.String())
-			c.Site.Mu.Unlock()
+			c.Site.AddPageToParent(childPage.Url.String(), page.Url.String())
 
 			// validate and add page to site
-			if err := c.Site.AddPageToSite(childPage); err != nil {
+			if err := c.Site.AddPageToSite(childPage.Url.String()); err != nil {
 				// TODO need to implement logging levels
-				if c.Verbose {
+				/*if c.Verbose {
 					childPage.Logger.Error(err)
-				}
+				}*/
 				continue
 			}
 
 		CrawlChild:
+			// check if Crawler have available threads
 			select {
 			case <-c.threadLimit:
-				// start crawl child page
+				// start crawl child page if we have
 				c.wg.Add(1)
 				go func() {
 					if err := c.CrawlPage(childPage); err != nil && c.Verbose {
@@ -156,12 +152,13 @@ func (c *Crawler) CrawlPage(page *site.Page) error {
 				}()
 				c.threadLimit <- 1
 			default:
+				// print warning and try again after one second
 				if c.Verbose {
-					childPage.Logger.Warning("CPU limit reached... WAIT")
+					childPage.Logger.Warning("Threads limit reached... WAIT")
 				}
+				time.Sleep(1 * time.Second)
 				goto CrawlChild
 			}
-			// }
 		}
 	}
 }
