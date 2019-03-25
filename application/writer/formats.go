@@ -33,5 +33,5 @@ func ParseFormats(s string) (Format, error) {
 			return Format(i), nil
 		}
 	}
-	return unsupported, fmt.Errorf("invalid SomeEnumType value %q", s)
+	return unsupported, fmt.Errorf("invalid Writer Format value %q", s)
 }
