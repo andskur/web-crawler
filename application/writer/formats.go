@@ -8,7 +8,7 @@ import (
 // of supported writer types
 type Format int
 
-// available Writer constans
+// available Writer constants
 const (
 	JSON Format = iota
 	XML
